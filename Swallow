@@ -1,0 +1,695 @@
+--// DOORS ENTITY QTE - MODIFIED FROM USER SCRIPT
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+--------------------------------------------------
+-- CONFIG
+--------------------------------------------------
+
+--------------------------------------------------
+-- RANDOM QTE MODE (EQUAL CHANCE)
+--------------------------------------------------
+
+local QTE_MODES = {
+	{ clicks = 90,  time = 15 },
+	{ clicks = 60,  time = 10 },
+	{ clicks = 120, time = 20 },
+	{ clicks = 30,  time = 5  },
+	{ clicks = 150, time = 25 },
+ { clicks = 180, time = 30 }
+}
+
+math.randomseed(tick())
+
+local chosenMode = QTE_MODES[math.random(1, #QTE_MODES)]
+
+local REQUIRED_CLICKS = chosenMode.clicks
+local TIME_LIMIT = chosenMode.time
+local SHAKE_STRENGTH = 4
+local OVERLAY_SWITCH_TIME = 0.12
+
+-- IMAGE IDS (giữ nguyên của bạn)
+local BLACK_IMAGE = "rbxassetid://139040073980655"
+local FACE_IMAGE  = "rbxassetid://90750184202852"
+
+local OVERLAY_IMAGES = {
+	"rbxassetid://76637426417491",
+	"rbxassetid://94547864377343"
+}
+
+function GitAud(soundgit,filename)
+    SoundName=tostring(SoundName)
+    local url=soundgit
+    local FileName = filename
+    writefile(FileName..".mp3", game:HttpGet(url))
+    return (getcustomasset or getsynasset)(FileName..".mp3")
+end
+
+function CustomGitSound(soundlink, vol, filename)
+    local sound = Instance.new("Sound")
+    sound.SoundId = GitAud(soundlink, filename)
+    sound.Parent = workspace
+    sound.Volume = 3
+    sound.PlaybackSpeed = 1
+    sound.Name = "JUMPSCAREEEE"
+    sound.Looped = false
+end
+
+CustomGitSound("https://github.com/Guestly-V2-2/Music-Sound/raw/refs/heads/main/XRecorder_Edited_20260123_04.mp3?raw=true", 1, " JC")
+
+--// Center Image Sequence Template (Exploit - Client Side)
+
+local Players = game:GetService("Players")
+
+-- CONFIG =========================
+local CHANGE_DELAY = 0.1 -- đổi ảnh mỗi 0.1 giây
+
+local IMAGE_IDS = {
+    "rbxassetid://124605026458689",
+    "rbxassetid://83054104561258",
+    "rbxassetid://103288972124347",
+    "rbxassetid://78834446071756",
+    "rbxassetid://105773515467359",
+    "rbxassetid://86700458153445",
+    "rbxassetid://79095804109184",
+}
+
+local imageIds = {
+    "rbxassetid://120635140018012",
+    "rbxassetid://123143667949902",
+    "rbxassetid://86469667690651",
+    "rbxassetid://117727836908473",
+    "rbxassetid://122444225360614",
+    "rbxassetid://131142595301534",
+    "rbxassetid://101461355775073",
+    "rbxassetid://120018066816632",
+}
+
+local IMAGE_IDS2 = {
+    "rbxassetid://78834446071756",
+    "rbxassetid://79095804109184",
+}
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CenterImageGui"
+screenGui.Parent = playerGui
+screenGui.IgnoreGuiInset = true
+
+local image = Instance.new("ImageLabel")
+image.Name = "CenterImage"
+image.Size = UDim2.new(1, 0, 1, 0)
+image.BackgroundTransparency = 1 -- Make the background fully transparent
+image.ImageTransparency = 1
+image.Parent = screenGui
+
+local screenGui2 = Instance.new("ScreenGui")
+screenGui2.Name = "DGui"
+screenGui2.Parent = game.Players.LocalPlayer.PlayerGui
+screenGui2.IgnoreGuiInset = true
+
+local image2 = Instance.new("ImageLabel")
+image2.Name = "DImage"
+image2.Size = UDim2.new(1, 0, 1, 0)
+image2.BackgroundTransparency = 1 -- Make the background fully transparent
+image2.ImageTransparency = 1
+image2.Parent = screenGui2
+
+--------------------------------------------------
+-- DEATH HOOK (giữ nguyên)
+--------------------------------------------------
+
+local deathTriggered = false
+local function OnDeath()
+	if deathTriggered then return end
+	deathTriggered = true
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "ImageChangerGui"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local imagefr = Instance.new("ImageLabel")
+imagefr.Size = UDim2.fromScale(4, 4)
+imagefr.Image = "rbxassetid://139040073980655"
+imagefr.Position = UDim2.fromScale(0.5, 0.5)
+imagefr.AnchorPoint = Vector2.new(0.5, 0.5)
+
+imagefr.BackgroundTransparency = 1
+
+imagefr.ScaleType = Enum.ScaleType.Fit -- ✅ giữ ảnh nguyên gốc
+imagefr.SizeConstraint = Enum.SizeConstraint.RelativeYY -- ✅ khóa theo chiều cao
+
+imagefr.ZIndex = 4
+imagefr.Parent = gui
+
+local imagenfr = Instance.new("ImageLabel")
+imagenfr.Size = UDim2.fromScale(1, 1)
+imagenfr.Image = "rbxassetid://79989193610461"
+imagenfr.Position = UDim2.fromScale(0.5, 0.5)
+imagenfr.AnchorPoint = Vector2.new(0.5, 0.5)
+
+imagenfr.BackgroundTransparency = 1
+
+imagenfr.ScaleType = Enum.ScaleType.Fit -- ✅ giữ ảnh nguyên gốc
+imagenfr.SizeConstraint = Enum.SizeConstraint.RelativeYY -- ✅ khóa theo chiều cao
+
+imagenfr.ZIndex = 5
+imagenfr.Parent = gui
+wait(3)
+imagenfr:Destroy()
+
+-- SERVICES
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+--------------------------------------------------
+-- GUI + IMAGE
+--------------------------------------------------
+
+local image = Instance.new("ImageLabel")
+image.Size = UDim2.fromScale(2.8, 2.8)
+image.Position = UDim2.fromScale(0.5, 0.5)
+image.AnchorPoint = Vector2.new(0.5, 0.5)
+
+image.BackgroundTransparency = 1
+
+image.ScaleType = Enum.ScaleType.Fit -- ✅ giữ ảnh nguyên gốc
+image.SizeConstraint = Enum.SizeConstraint.RelativeYY -- ✅ khóa theo chiều cao
+
+image.ZIndex = 5
+image.Parent = gui
+
+--------------------------------------------------
+-- IMAGE SEQUENCE (0.1s / ẢNH)
+--------------------------------------------------
+
+task.spawn(function()
+	for i = 1, #imageIds do
+		if not image.Parent then break end
+
+		image.Image = imageIds[i]
+		task.wait(0.1)
+	end
+
+	-- ✅ chạy xong toàn bộ ảnh → xoá GUI
+	if gui then
+		gui:Destroy()
+
+game.Workspace.JUMPSCAREEEE:Play()
+
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "You died to who called Swallow..",
+        "Oh.. I didn't expect that's him..",
+        "You should have been obey his rules..",
+        "You can do it, i believe in you!",
+        "Good luck."
+    },
+    "Blue"
+)
+
+game.Players.LocalPlayer.Character.Humanoid.Health = 0
+
+game.ReplicatedStorage.GameStats['Player_' .. game.Players.LocalPlayer.Name].Total.DeathCause.Value = 'Swallow'
+
+-- One-time execute guard
+if getgenv()._SWA_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._SWA_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Sharpness of Reflexiveness ",
+    Desc = "Faster and faster!!",
+    Reason = "Encounter and died to Swallow.",
+    Image = "rbxassetid://112443627697920"
+})
+	end
+end)
+
+end
+
+--------------------------------------------------
+-- GUI ROOT
+--------------------------------------------------
+
+local gui = Instance.new("ScreenGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+--------------------------------------------------
+-- PRE OVERLAY (FADE IN 5s)
+--------------------------------------------------
+local preOverlayRunning = true
+local preOverlay = Instance.new("ImageLabel")
+preOverlay.Size = UDim2.fromScale(1,1)
+preOverlay.Position = UDim2.fromScale(0.5,0.5)
+preOverlay.AnchorPoint = Vector2.new(0.5,0.5)
+preOverlay.BackgroundTransparency = 1
+preOverlay.Image = OVERLAY_IMAGES[1]
+preOverlay.ImageTransparency = 1
+preOverlay.Parent = gui
+
+function GitAud(soundgit,filename)
+    SoundName=tostring(SoundName)
+    local url=soundgit
+    local FileName = filename
+    writefile(FileName..".mp3", game:HttpGet(url))
+    return (getcustomasset or getsynasset)(FileName..".mp3")
+end
+
+function CustomGitSound(soundlink, vol, filename)
+    local sound = Instance.new("Sound")
+    sound.SoundId = GitAud(soundlink, filename)
+    sound.Parent = workspace
+    sound.Volume = 3
+    sound.PlaybackSpeed = 1
+    sound.Name = "OverlayRunning"
+    sound.Looped = false
+   sound:Play()
+end
+
+CustomGitSound("https://github.com/Guestly-V2-2/Music-Sound/raw/refs/heads/main/lv_0_20260123120323.mp3?raw=true", 1, " running")
+
+task.spawn(function()
+	local i = 1
+	while preOverlayRunning and preOverlay.Parent do
+		preOverlay.Image = OVERLAY_IMAGES[i]
+		i += 1
+		if i > #OVERLAY_IMAGES then
+			i = 1
+		end
+		task.wait(OVERLAY_SWITCH_TIME)
+	end
+end)
+
+TweenService:Create(
+	preOverlay,
+	TweenInfo.new(5, Enum.EasingStyle.Linear),
+	{ImageTransparency = 0.3}
+):Play()
+
+task.wait(5)
+preOverlayRunning = false
+preOverlay:Destroy()
+
+-- SEQUENCE
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(0, 0, 0)
+game.Players.LocalPlayer.PlayerGui.CenterImageGui.CenterImage.ImageTransparency = 0
+task.wait(0.01)
+task.spawn(function()
+    for i = 1, #IMAGE_IDS do
+        game.Players.LocalPlayer.PlayerGui.CenterImageGui.CenterImage.Image = IMAGE_IDS[i]
+        task.wait(CHANGE_DELAY)
+    end
+
+    -- XÓA IMAGE SAU KHI CHẠY XONG
+    screenGui:Destroy()
+    game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+end)
+
+task.wait(0.8)
+--------------------------------------------------
+-- BLACK
+--------------------------------------------------
+
+local black = Instance.new("ImageLabel")
+black.Size = UDim2.fromScale(1,1)
+black.Position = UDim2.fromScale(0.5,0.5)
+black.AnchorPoint = Vector2.new(0.5,0.5)
+black.BackgroundTransparency = 1
+black.Image = BLACK_IMAGE
+black.Parent = gui
+
+--------------------------------------------------
+-- OVERLAY 2 (GUI CHÍNH - LỚP TRÊN)
+--------------------------------------------------
+
+local overlay2 = Instance.new("ImageLabel")
+overlay2.Name = "OverlayMainExtra"
+overlay2.Size = UDim2.fromScale(1, 1)
+overlay2.Position = UDim2.fromScale(0.5, 0.5)
+overlay2.AnchorPoint = Vector2.new(0.5, 0.5)
+overlay2.BackgroundTransparency = 1
+overlay2.ImageTransparency = 0 -- bạn chỉnh
+overlay2.Image = "rbxassetid://107460266339449" -- 🔧 bạn tự gắn
+overlay2.ZIndex = 3
+overlay2.Parent = gui
+
+--------------------------------------------------
+-- FACE (FIX XẸP ẢNH)
+--------------------------------------------------
+
+local face = Instance.new("ImageLabel")
+
+local FACE_NORMAL_SIZE = UDim2.fromScale(0.6, 0.6) -- size chuẩn
+
+face.Size = UDim2.fromScale(0.01, 0.01) -- 👻 cực nhỏ lúc mới hiện
+face.SizeConstraint = Enum.SizeConstraint.RelativeYY
+face.Position = UDim2.fromScale(0.5,0.5)
+face.AnchorPoint = Vector2.new(0.5,0.5)
+face.BackgroundTransparency = 1
+face.Image = FACE_IMAGE
+face.Parent = gui
+
+--------------------------------------------------
+-- HEART IMAGE (BOTTOM CENTER - HEARTBEAT)
+--------------------------------------------------
+
+local heartImage = Instance.new("ImageLabel")
+heartImage.Name = "HeartbeatImage"
+heartImage.Size = UDim2.fromScale(0.16, 0.16)
+heartImage.ImageTransparency = 0.3
+heartImage.SizeConstraint = Enum.SizeConstraint.RelativeYY -- 🔥 FIX XẸP ẢNH
+heartImage.Position = UDim2.fromScale(0.5, 0.65)
+heartImage.AnchorPoint = Vector2.new(0.5, 0.5)
+heartImage.BackgroundTransparency = 1
+heartImage.Image = "rbxassetid://107832579871934"
+heartImage.ZIndex = 5
+heartImage.Parent = gui
+
+local HEART_BASE_SIZE = heartImage.Size
+
+local heartRunning = true
+
+task.spawn(function()
+	while heartRunning and heartImage.Parent do
+		-- phồng lên
+		TweenService:Create(
+			heartImage,
+			TweenInfo.new(
+				0.15,
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.Out
+			),
+			{
+				Size = UDim2.fromScale(
+					HEART_BASE_SIZE.X.Scale * 1.15,
+					HEART_BASE_SIZE.Y.Scale * 1.15
+				)
+			}
+		):Play()
+
+		task.wait(0.15)
+
+		-- trở về size cũ
+		TweenService:Create(
+			heartImage,
+			TweenInfo.new(
+				0.25,
+				Enum.EasingStyle.Quad,
+				Enum.EasingDirection.Out
+			),
+			{ Size = HEART_BASE_SIZE }
+		):Play()
+
+		task.wait(1) -- 💓 mỗi 1 giây 1 nhịp
+	end
+end)
+
+--------------------------------------------------
+-- OVERLAY
+--------------------------------------------------
+
+local overlay = Instance.new("ImageLabel")
+overlay.Size = UDim2.fromScale(1,1)
+overlay.Position = UDim2.fromScale(0.5,0.5)
+overlay.AnchorPoint = Vector2.new(0.5,0.5)
+overlay.BackgroundTransparency = 1
+overlay.ImageTransparency = 0.4
+overlay.Parent = gui
+
+--------------------------------------------------
+-- OVERLAY CYCLER (giữ nguyên)
+--------------------------------------------------
+
+local overlayRunning = true
+task.spawn(function()
+	local i = 1
+	while overlayRunning and overlay.Parent do
+		overlay.Image = OVERLAY_IMAGES[i]
+		i += 1
+		if i > #OVERLAY_IMAGES then i = 1 end
+		task.wait(OVERLAY_SWITCH_TIME)
+	end
+end)
+
+--------------------------------------------------
+-- QTE TEXT
+--------------------------------------------------
+
+local counterText = Instance.new("TextLabel")
+counterText.Size = UDim2.fromScale(1,0.1)
+counterText.Position = UDim2.fromScale(0.5,0.05)
+counterText.AnchorPoint = Vector2.new(0.5,0)
+counterText.BackgroundTransparency = 1
+counterText.TextColor3 = Color3.new(1,1,1)
+counterText.Font = Enum.Font.GothamBold
+counterText.TextScaled = true
+counterText.Text = "0/"..REQUIRED_CLICKS
+counterText.Parent = gui
+
+local baseTextSize = counterText.Size
+
+local timerText = Instance.new("TextLabel")
+timerText.Size = UDim2.fromScale(1,0.1)
+timerText.Position = UDim2.fromScale(0.5,0.85)
+timerText.AnchorPoint = Vector2.new(0.5,0)
+timerText.BackgroundTransparency = 1
+timerText.TextColor3 = Color3.new(1,1,1)
+timerText.Font = Enum.Font.Gotham
+timerText.TextScaled = true
+timerText.Text = TIME_LIMIT.." seconds left"
+timerText.Parent = gui
+
+-- 🎬 FACE SCALE-IN (1.5s)
+TweenService:Create(
+	face,
+	TweenInfo.new(
+		1.5,
+		Enum.EasingStyle.Quint,
+		Enum.EasingDirection.Out
+	),
+	{Size = FACE_NORMAL_SIZE}
+):Play()
+
+function GitAud(soundgit,filename)
+    SoundName=tostring(SoundName)
+    local url=soundgit
+    local FileName = filename
+    writefile(FileName..".mp3", game:HttpGet(url))
+    return (getcustomasset or getsynasset)(FileName..".mp3")
+end
+
+function CustomGitSound(soundlink, vol, filename)
+    local sound = Instance.new("Sound")
+    sound.SoundId = GitAud(soundlink, filename)
+    sound.Parent = workspace
+    sound.Volume = 3
+    sound.PlaybackSpeed = 1
+    sound.Name = "Surviving"
+    sound.Looped = true
+   sound:Play()
+end
+
+CustomGitSound("https://github.com/Guestly-V2-2/Music-Sound/raw/refs/heads/main/lv_0_20260123120909.mp3?raw=true", 1, " noo")
+
+--------------------------------------------------
+-- SHAKE (giữ nguyên)
+--------------------------------------------------
+
+local basePos = UDim2.fromScale(0.5,0.5)
+local shakeConn = RunService.RenderStepped:Connect(function()
+	local ox = math.random(-SHAKE_STRENGTH,SHAKE_STRENGTH)/1000
+	local oy = math.random(-SHAKE_STRENGTH,SHAKE_STRENGTH)/1000
+	face.Position = basePos + UDim2.fromScale(ox,oy)
+end)
+
+--------------------------------------------------
+-- QTE LOGIC
+--------------------------------------------------
+
+local clicks = 0
+local finished = false
+local success = false
+local timeLeft = TIME_LIMIT
+
+mouse.Button1Down:Connect(function()
+	if finished then return end
+	if clicks >= REQUIRED_CLICKS then return end
+
+	clicks += 1
+	counterText.Text = clicks.."/"..REQUIRED_CLICKS
+
+	--------------------------------------------------
+	-- 🔥 TEXT POP EFFECT (PHÓNG TO → VỀ LẠI)
+	--------------------------------------------------
+	counterText:TweenSize(
+		UDim2.fromScale(1, 0.12), -- to hơn chút
+		Enum.EasingDirection.Out,
+		Enum.EasingStyle.Back,
+		0.1,
+		true,
+		function()
+			counterText:TweenSize(
+				baseTextSize,
+				Enum.EasingDirection.Out,
+				Enum.EasingStyle.Quad,
+				0.15,
+				true
+			)
+		end
+	)
+
+	--------------------------------------------------
+	-- SUCCESS TRIGGER
+	--------------------------------------------------
+	if clicks >= REQUIRED_CLICKS then
+		success = true
+		finished = true
+		timerText.Text = "SUCCESSED"
+	end
+end)
+
+task.spawn(function()
+	while timeLeft > 0 and not finished do
+		timerText.Text = timeLeft.." seconds left"
+		task.wait(1)
+		timeLeft -= 1
+	end
+
+	if finished then
+		game.Workspace.Surviving:Destroy()
+gui:Destroy()
+
+-- SEQUENCE
+game.Players.LocalPlayer.PlayerGui.DGui.DImage.ImageTransparency = 0
+task.wait(0.01)
+task.spawn(function()
+    for i = 1, #IMAGE_IDS2 do
+        game.Players.LocalPlayer.PlayerGui.DGui.DImage.Image = IMAGE_IDS2[i]
+        task.wait(CHANGE_DELAY)
+    end
+
+    -- XÓA IMAGE SAU KHI CHẠY XONG
+    game.Players.LocalPlayer.PlayerGui.DGui:Destroy()
+end)
+
+function GitAud(soundgit,filename)
+    SoundName=tostring(SoundName)
+    local url=soundgit
+    local FileName = filename
+    writefile(FileName..".mp3", game:HttpGet(url))
+    return (getcustomasset or getsynasset)(FileName..".mp3")
+end
+
+function CustomGitSound(soundlink, vol, filename)
+    local sound = Instance.new("Sound")
+    sound.SoundId = GitAud(soundlink, filename)
+    sound.Parent = workspace
+    sound.Volume = 3
+    sound.PlaybackSpeed = 1
+    sound.Name = "sucessed"
+    sound.Looped = false
+   sound:Play()
+end
+
+CustomGitSound("https://github.com/Guestly-V2-2/Music-Sound/raw/refs/heads/main/XRecorder_Edited_20260123_03.mp3?raw=true", 1, " yeee")
+
+-- One-time execute guard
+if getgenv()._SWA_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._SWA_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Sharpness of Reflexiveness ",
+    Desc = "Faster and faster!!",
+    Reason = "Encounter Swallow.",
+    Image = "rbxassetid://112443627697920"
+})
+	else
+		game.Workspace.Surviving:Destroy()
+		finished = true
+	end
+
+	overlayRunning = false
+  overlay2Running = false
+  heartRunning = false
+	if shakeConn then shakeConn:Disconnect() end
+	counterText:Destroy()
+	timerText:Destroy()
+
+	if clicks >= REQUIRED_CLICKS then
+		-- SUCCESS SEQUENCE (fade + destroy gui)
+	else
+		gui:Destroy()
+		OnDeath()
+	end
+end)
+
+task.spawn(function()
+	while not finished do
+		task.wait()
+	end
+
+	if not success then return end
+
+	--------------------------------------------------
+	-- 🎬 ENTITY SUCCESS TWEEN (2s)
+	--------------------------------------------------
+
+	local tweenInfo = TweenInfo.new(
+		2,
+		Enum.EasingStyle.Quart,
+		Enum.EasingDirection.In
+	)
+
+	-- tween nhỏ lại + fade
+	local tween = TweenService:Create(face, tweenInfo, {
+		Size = UDim2.fromScale(0.001, 0.001),
+		ImageTransparency = 1
+	})
+
+	tween:Play()
+	tween.Completed:Wait()
+
+	print("con cak")
+	gui:Destroy()
+end)
