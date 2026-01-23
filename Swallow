@@ -600,6 +600,7 @@ task.spawn(function()
     game.Players.LocalPlayer.PlayerGui.DGui:Destroy()
 end)
 
+game.Workspace.OverlayRunning:Destroy()
 function GitAud(soundgit,filename)
     SoundName=tostring(SoundName)
     local url=soundgit
