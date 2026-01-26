@@ -1,0 +1,65 @@
+-- UNIVERSAL BLUE EFFECT (EFFECT ONLY)
+-- Client-side visual exploit
+
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local EFFECT_COLOR = Color3.fromRGB(0, 170, 255)
+
+local EFFECT_CLASSES = {
+    ParticleEmitter = true,
+    Beam = true,
+    Trail = true,
+    Fire = true,
+    Smoke = true,
+    Sparkles = true,
+    Explosion = true,
+    PointLight = true,
+    SpotLight = true,
+    SurfaceLight = true
+}
+
+local function applyEffectColor(obj)
+    if not EFFECT_CLASSES[obj.ClassName] then return end
+
+    pcall(function()
+        if obj:IsA("ParticleEmitter") then
+            obj.Color = ColorSequence.new(EFFECT_COLOR)
+
+        elseif obj:IsA("Beam") or obj:IsA("Trail") then
+            obj.Color = ColorSequence.new(EFFECT_COLOR)
+
+        elseif obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
+            obj.Color = EFFECT_COLOR
+
+        elseif obj:IsA("Explosion") then
+            obj.BlastPressure = 0
+            obj.BlastRadius = obj.BlastRadius
+            obj.Visible = true
+
+        elseif obj:IsA("PointLight") or obj:IsA("SpotLight") or obj:IsA("SurfaceLight") then
+            obj.Color = EFFECT_COLOR
+        end
+    end)
+end
+
+local function scan(container)
+    for _, obj in ipairs(container:GetDescendants()) do
+        applyEffectColor(obj)
+    end
+end
+
+-- Scan ban đầu
+scan(workspace)
+scan(ReplicatedStorage)
+
+-- Effect spawn sau
+workspace.DescendantAdded:Connect(applyEffectColor)
+ReplicatedStorage.DescendantAdded:Connect(applyEffectColor)
+
+-- Anti-reset (game đổi lại màu)
+RunService.RenderStepped:Connect(function()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        applyEffectColor(obj)
+    end
+end)
