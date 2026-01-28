@@ -1,0 +1,484 @@
+--------------------------------------------------
+-- SERVICES
+--------------------------------------------------
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local CAS = game:GetService("ContextActionService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local PathfindingService = game:GetService("PathfindingService")
+
+--------------------------------------------------
+-- PLAYER / CAMERA
+--------------------------------------------------
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+--------------------------------------------------
+-- CONFIG
+--------------------------------------------------
+local ROBOT_TEAM = "Robots"
+local HUMAN_TEAM = "Humans"
+local HITBOX_RADIUS = 60
+local AIM_LERP = 0.18
+local FOLLOW_SPEED = 1
+local HIGHLIGHT_TWEEN = 0.25
+local JUMP_COOLDOWN = 0.35
+
+--------------------------------------------------
+-- STATE
+--------------------------------------------------
+local character, hrp, humanoid
+local robotsInRange = {}
+local humansInRange = {}
+local lockedTarget = nil
+local lockEnabled = false
+
+-- jump / movement
+local lastJumpTime = 0
+local lastTargetJumpState = false
+local lastHRPPosition = nil
+
+-- PATH AI
+local moveState = "DIRECT" -- DIRECT / JUMP_TRY / PATH
+local stuckTimer = 0
+local triedJump = false
+local jumpTryTime = 0
+
+local path = nil
+local waypoints = nil
+local wpIndex = 1
+local usingPath = false
+
+-- human extra
+local humanHoldingE = false
+local originalCameraMode = nil
+
+--------------------------------------------------
+-- PLAYER CONTROLS (ROBOTS)
+--------------------------------------------------
+local PlayerModule = require(
+	LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
+)
+local Controls = PlayerModule:GetControls()
+
+local function lockControls() Controls:Disable() end
+local function unlockControls() Controls:Enable() end
+
+--------------------------------------------------
+-- HELPERS
+--------------------------------------------------
+local function isMobile()
+	return UIS.TouchEnabled and not UIS.KeyboardEnabled
+end
+
+local function localTeam()
+	return LocalPlayer.Team and LocalPlayer.Team.Name
+end
+
+local function getNearestPlayer(list)
+	if not hrp then return nil end
+	local nearest, dist = nil, math.huge
+	for _, p in ipairs(list) do
+		local r = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+		if r then
+			local d = (r.Position - hrp.Position).Magnitude
+			if d < dist then
+				dist = d
+				nearest = p
+			end
+		end
+	end
+	return nearest
+end
+
+--------------------------------------------------
+-- FIRST PERSON (HUMANS)
+--------------------------------------------------
+local function forceFirstPerson()
+	if not originalCameraMode then
+		originalCameraMode = LocalPlayer.CameraMode
+	end
+	LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+end
+
+local function releaseFirstPerson()
+	if originalCameraMode then
+		LocalPlayer.CameraMode = originalCameraMode
+		originalCameraMode = nil
+	end
+end
+
+--------------------------------------------------
+-- UI
+--------------------------------------------------
+local gui = Instance.new("ScreenGui")
+gui.Name = "LockGui"
+gui.ResetOnSpawn = false
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local pcText = Instance.new("TextLabel")
+pcText.Size = UDim2.fromScale(1, 0.07)
+pcText.Position = UDim2.fromScale(0, 0.8)
+pcText.BackgroundTransparency = 1
+pcText.TextScaled = true
+pcText.Font = Enum.Font.GothamBold
+pcText.TextColor3 = Color3.fromRGB(140, 200, 255)
+pcText.TextStrokeTransparency = 0
+pcText.Visible = false
+pcText.Parent = gui
+
+local mobileBtn = Instance.new("TextButton")
+mobileBtn.Size = UDim2.fromScale(0.4, 0.1)
+mobileBtn.Position = UDim2.fromScale(0.3, 0.65)
+mobileBtn.Text = "LOCK"
+mobileBtn.TextScaled = true
+mobileBtn.Font = Enum.Font.GothamBold
+mobileBtn.BackgroundColor3 = Color3.fromRGB(140, 200, 255)
+mobileBtn.TextColor3 = Color3.new(0,0,0)
+mobileBtn.Visible = false
+mobileBtn.Parent = gui
+
+--------------------------------------------------
+-- AUTO MOVING TEXT (ROBOTS)
+--------------------------------------------------
+local autoMoveTween
+
+local function stopAutoMoveText()
+	if autoMoveTween then
+		autoMoveTween:Cancel()
+		autoMoveTween = nil
+	end
+	pcText.TextTransparency = 0
+end
+
+local function startAutoMoveText()
+	if autoMoveTween then return end
+	pcText.Text = "Auto Moving"
+	pcText.Visible = true
+
+	autoMoveTween = TweenService:Create(
+		pcText,
+		TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{TextTransparency = 0.2}
+	)
+	autoMoveTween:Play()
+end
+
+--------------------------------------------------
+-- HIGHLIGHT
+--------------------------------------------------
+local function tweenHighlight(h, props)
+	TweenService:Create(
+		h,
+		TweenInfo.new(HIGHLIGHT_TWEEN, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		props
+	):Play()
+end
+
+local function getHighlight(char)
+	local h = char:FindFirstChild("TeamHighlight")
+	if not h then
+		h = Instance.new("Highlight")
+		h.Name = "TeamHighlight"
+		h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		h.Adornee = char
+		h.Parent = char
+	end
+	return h
+end
+
+local function setHighlight(player, mode)
+	local char = player.Character
+	if not char then return end
+	local h = getHighlight(char)
+
+	if mode == "LOCKED" then
+		tweenHighlight(h,{FillColor=Color3.fromRGB(255,60,60),OutlineColor=Color3.fromRGB(255,120,120),FillTransparency=0.2})
+	elseif mode == "IN_RANGE" then
+		tweenHighlight(h,{FillColor=Color3.fromRGB(80,255,120),OutlineColor=Color3.fromRGB(120,255,160),FillTransparency=0.35})
+	else
+		if player.TeamColor then
+			tweenHighlight(h,{FillColor=player.TeamColor.Color,OutlineColor=player.TeamColor.Color,FillTransparency=0.45})
+		end
+	end
+end
+
+--------------------------------------------------
+-- RANGE
+--------------------------------------------------
+local function getPlayersInRange(teamName)
+	local list = {}
+	if not hrp then return list end
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= LocalPlayer
+			and p.Team and p.Team.Name == teamName
+			and p.Character
+			and p.Character:FindFirstChild("HumanoidRootPart")
+			and p.Character:FindFirstChild("Humanoid")
+			and p.Character.Humanoid.Health > 0
+		then
+			if (p.Character.HumanoidRootPart.Position - hrp.Position).Magnitude <= HITBOX_RADIUS then
+				table.insert(list, p)
+			end
+		end
+	end
+	return list
+end
+
+--------------------------------------------------
+-- LOCK / UNLOCK
+--------------------------------------------------
+local function unlock()
+	lockEnabled = false
+	lockedTarget = nil
+	lastTargetJumpState = false
+	lastHRPPosition = nil
+	humanHoldingE = false
+	releaseFirstPerson()
+	if humanoid then humanoid.AutoRotate = true end
+	unlockControls()
+	stopAutoMoveText()
+end
+
+local function lock()
+	if localTeam() == HUMAN_TEAM then
+		if #robotsInRange == 0 then return end
+		lockEnabled = true
+		lockedTarget = robotsInRange[math.random(1,#robotsInRange)]
+	elseif localTeam() == ROBOT_TEAM then
+		if #humansInRange == 0 then return end
+		lockEnabled = true
+		lockedTarget = getNearestPlayer(humansInRange)
+		if humanoid then humanoid.AutoRotate = false end
+		lockControls()
+	end
+end
+
+--------------------------------------------------
+-- INPUT
+--------------------------------------------------
+CAS:BindAction(
+	"LockAction",
+	function(_, state)
+		if isMobile() then return end
+		if state == Enum.UserInputState.Begin then
+			if localTeam() == HUMAN_TEAM then
+				humanHoldingE = true
+				forceFirstPerson()
+			end
+			lock()
+		elseif state == Enum.UserInputState.End then
+			unlock()
+		end
+	end,
+	false,
+	Enum.KeyCode.E
+)
+
+mobileBtn.MouseButton1Down:Connect(lock)
+mobileBtn.MouseButton1Up:Connect(unlock)
+
+--------------------------------------------------
+-- AIM (HUMANS)
+--------------------------------------------------
+local function aimAt(target)
+	local r = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+	if not r then return end
+	Camera.CFrame = Camera.CFrame:Lerp(
+		CFrame.new(Camera.CFrame.Position, r.Position),
+		AIM_LERP
+	)
+end
+
+local function isStuck(dt)
+    if not lastHRPPosition then
+        lastHRPPosition = hrp.Position
+        return false
+    end
+
+    local moved = (hrp.Position - lastHRPPosition).Magnitude
+
+    if moved < 0.12 then
+        stuckTimer += dt
+    else
+        stuckTimer = 0
+    end
+
+    lastHRPPosition = hrp.Position
+    return stuckTimer > 0.35
+end
+
+local function computePath(targetPos)
+    path = PathfindingService:CreatePath({
+        AgentRadius = 2,
+        AgentHeight = 5,
+        AgentCanJump = true
+    })
+
+    path:ComputeAsync(hrp.Position, targetPos)
+
+    if path.Status == Enum.PathStatus.Success then
+        waypoints = path:GetWaypoints()
+        wpIndex = 1
+        usingPath = true
+        moveState = "PATH"
+    else
+        moveState = "DIRECT"
+    end
+end
+
+--------------------------------------------------
+-- MAIN LOOP
+--------------------------------------------------
+RunService.RenderStepped:Connect(function()
+	if not hrp or not humanoid then return end
+
+	robotsInRange = getPlayersInRange(ROBOT_TEAM)
+	humansInRange = getPlayersInRange(HUMAN_TEAM)
+
+	--------------------------------------------------
+	-- UI
+	--------------------------------------------------
+	if not isMobile() then
+		if localTeam() == ROBOT_TEAM then
+			if lockEnabled and lockedTarget then
+				startAutoMoveText()
+			elseif #humansInRange > 0 then
+				stopAutoMoveText()
+				pcText.Text = "Hold E to follow target"
+				pcText.Visible = true
+			else
+				stopAutoMoveText()
+				pcText.Visible = false
+			end
+		else
+			stopAutoMoveText()
+			if #robotsInRange > 0 then
+				pcText.Text = humanHoldingE and "Targeting" or "Hold E to lock target"
+				pcText.Visible = true
+			else
+				pcText.Visible = false
+			end
+		end
+	end
+
+	mobileBtn.Visible =
+		isMobile() and (
+			(localTeam()==ROBOT_TEAM and #humansInRange>0) or
+			(localTeam()==HUMAN_TEAM and #robotsInRange>0)
+		)
+
+	--------------------------------------------------
+	-- HIGHLIGHT
+	--------------------------------------------------
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p.Team and p.Character then
+			local mode = "TEAM"
+			if localTeam()==HUMAN_TEAM and p.Team.Name==ROBOT_TEAM then
+				if lockEnabled and p==lockedTarget then
+					mode="LOCKED"
+				elseif table.find(robotsInRange,p) then
+					mode="IN_RANGE"
+				end
+			elseif localTeam()==ROBOT_TEAM and p.Team.Name==HUMAN_TEAM then
+				if lockEnabled and p==lockedTarget then
+					mode="LOCKED"
+				elseif table.find(humansInRange,p) then
+					mode="IN_RANGE"
+				end
+			end
+			setHighlight(p,mode)
+		end
+	end
+
+	--------------------------------------------------
+	-- HUMAN AIM
+	--------------------------------------------------
+	if lockEnabled and lockedTarget and localTeam()==HUMAN_TEAM then
+		if (lockedTarget.Character.HumanoidRootPart.Position-hrp.Position).Magnitude > HITBOX_RADIUS then
+			unlock()
+		else
+			aimAt(lockedTarget)
+		end
+	end
+
+	--------------------------------------------------
+	-- ROBOT FOLLOW + JUMP (SAFE + OBSTACLE)
+	--------------------------------------------------
+	if lockEnabled and lockedTarget and localTeam()==ROBOT_TEAM then
+		local tChar = lockedTarget.Character
+local tHRP = tChar and tChar:FindFirstChild("HumanoidRootPart")
+local tHum = tChar and tChar:FindFirstChild("Humanoid")
+if not tHRP or not tHum then unlock() return end
+
+local dir = tHRP.Position - hrp.Position
+local flat = Vector3.new(dir.X,0,dir.Z)
+
+-- ===== STATE MACHINE =====
+
+if moveState == "DIRECT" then
+
+    if flat.Magnitude > 2 then
+        humanoid:Move(flat.Unit * FOLLOW_SPEED, false)
+    end
+
+    if isStuck(dt) then
+        moveState = "JUMP_TRY"
+        humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        triedJump = true
+        jumpTryTime = tick()
+    end
+
+elseif moveState == "JUMP_TRY" then
+
+    if tick() - jumpTryTime > 0.3 then
+        if isStuck(dt) then
+            computePath(tHRP.Position)
+        else
+            moveState = "DIRECT"
+        end
+    end
+
+elseif moveState == "PATH" and usingPath then
+
+    local wp = waypoints[wpIndex]
+    if wp then
+        humanoid:MoveTo(wp.Position)
+
+        if wp.Action == Enum.PathWaypointAction.Jump then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+
+    if (hrp.Position - tHRP.Position).Magnitude < 6 then
+        moveState = "DIRECT"
+        usingPath = false
+        stuckTimer = 0
+        triedJump = false
+    end
+end
+end)
+
+--------------------------------------------------
+-- CHARACTER INIT
+--------------------------------------------------
+LocalPlayer.CharacterAdded:Connect(function(c)
+	character = c
+	hrp = c:WaitForChild("HumanoidRootPart")
+	humanoid = c:WaitForChild("Humanoid")
+	unlock()
+end)
+
+if LocalPlayer.Character then
+	character = LocalPlayer.Character
+	hrp = character:WaitForChild("HumanoidRootPart")
+	humanoid = character:WaitForChild("Humanoid")
+end
+
+humanoid.MoveToFinished:Connect(function(reached)
+    if moveState == "PATH" and reached then
+        wpIndex += 1
+    end
+end)
