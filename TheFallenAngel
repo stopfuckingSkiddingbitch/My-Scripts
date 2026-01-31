@@ -1,0 +1,634 @@
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(0, 0, 0)
+wait(2)
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+game:GetService("Lighting").MainColorCorrection.Contrast = 10
+
+function GitAud(soundgit,filename)
+    SoundName=tostring(SoundName)
+    local url=soundgit
+    local FileName = filename
+    writefile(FileName..".mp3", game:HttpGet(url))
+    return (getcustomasset or getsynasset)(FileName..".mp3")
+end
+
+function CustomGitSound(soundlink, vol, filename)
+    local sound = Instance.new("Sound")
+    sound.SoundId = GitAud(soundlink, filename)
+    sound.Parent = workspace
+    sound.Volume = 2
+    sound.PlaybackSpeed = 1
+    sound.Name = "DREAMCORE"
+    sound.Looped = false
+   sound:Play()
+end
+
+CustomGitSound("https://github.com/Guestly-V2-2/Music-Sound/raw/refs/heads/main/YTDowncom_YouTube_Six-Forty-Seven_Media_NkzzjHaXfaw_001_1080p.mp3?raw=true", 1, " dreammusic")
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "overlaygui"
+screenGui.Parent = playerGui
+screenGui.IgnoreGuiInset = true
+
+local red = Instance.new("ImageLabel")
+red.Name = "overlay"
+red.Size = UDim2.new(1, 0, 1, 0)
+red.BackgroundTransparency = 1 -- Make the background fully transparent
+red.Image = "rbxassetid://89921841313942" -- Set the image using a random Image ID
+red.ImageTransparency = 0
+red.ZIndex = 2
+red.Parent = screenGui
+
+local red2 = Instance.new("ImageLabel")
+red2.Name = "overlay2"
+red2.Size = UDim2.new(1, 0, 1, 0)
+red2.BackgroundTransparency = 1 -- Make the background fully transparent
+red2.ImageTransparency = 0.8
+red2.Parent = screenGui
+red2.ZIndex = 1
+
+local img = red2
+
+local images = {
+	"rbxassetid://76637426417491",
+	"rbxassetid://94547864377343"
+}
+
+local i = 1
+
+task.spawn(function()
+	while true do
+task.wait(1)
+		img.Image = images[i]
+		i = i % #images + 1
+		task.wait(0.5)
+	end
+end)
+
+-- COLLISION (Ä‘oáº¡n bá»‹ ngáº¯t)
+local Character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local RootPart = Character:WaitForChild("HumanoidRootPart")
+local Camera = workspace.CurrentCamera
+local Collision
+
+Collision = Character:FindFirstChild("CollisionPart")
+    if not Collision then
+        for _, part in pairs(Character:GetChildren()) do
+            if part:IsA("BasePart") and part.Name:lower():find("collision") then
+                Collision = part
+                break
+            end
+        end
+    end
+    
+    if not Collision then
+        Collision = RootPart
+    end
+    
+    local CollisionClone = Collision:Clone()
+    CollisionClone.CanCollide = false
+    CollisionClone.Massless = true
+    CollisionClone.CanQuery = false
+    CollisionClone.Name = "CollisionClone"
+    
+    if CollisionClone:FindFirstChild("CollisionCrouch") then
+        CollisionClone.CollisionCrouch:Destroy()
+    end
+    
+    CollisionClone.Parent = Character
+    
+    task.spawn(function()
+        while Character.Parent do
+            if RootPart.Anchored then
+                CollisionClone.Massless = true
+                repeat task.wait() until not RootPart.Anchored
+                task.wait(0.15)
+            else
+                CollisionClone.Massless = not CollisionClone.Massless
+            end
+            task.wait(0.24)
+        end
+    end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+
+-- ===== TEXT GỐC =====
+local texts = {
+	"Don't be afraid",
+	"You are not real",
+	"Do you think you are safe",
+	"Never give up",
+	"It is not real",
+	"Get out of my head",
+	"RUN RUN RUN!",
+	"HIDE!"
+}
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.Name = "RedTextHorror"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local label = Instance.new("TextLabel")
+label.Parent = gui
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255, 0, 0)
+label.TextStrokeTransparency = 0
+label.TextStrokeColor3 = Color3.new(0,0,0)
+label.TextScaled = true
+label.Size = UDim2.fromScale(0.33, 0.33)
+label.AnchorPoint = Vector2.new(0.5, 0.5)
+label.TextWrapped = true
+label.Font = Enum.Font.SourceSansBold
+
+-- ===== RANDOM VỊ TRÍ GỐC =====
+local basePos = UDim2.fromScale(0.5, 0.5)
+
+local function randomPosition()
+	basePos = UDim2.fromScale(
+		math.random(20, 80)/100,
+		math.random(20, 80)/100
+	)
+	label.Position = basePos
+end
+
+-- ===== RUNG NHẸ LIÊN TỤC (KHÔNG LAG) =====
+RunService.RenderStepped:Connect(function()
+	local t = tick()
+	
+	local offsetX = math.sin(t * 3) * 2
+	local offsetY = math.cos(t * 2.4) * 2
+	
+	label.Position = basePos + UDim2.new(0, offsetX, 0, offsetY)
+end)
+
+-- ===== LOOP ĐỔI TEXT =====
+task.spawn(function()
+	while gui.Parent do
+		label.Text = texts[math.random(1, #texts)]
+		randomPosition()
+
+		-- nhấp nháy nhẹ thay glitch
+		for i = 1,6 do
+			label.TextTransparency = math.random() * 0.15
+			task.wait(0.08)
+		end
+
+		task.wait(1.6)
+	end
+end)
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local DESIRED_SPEED = 10
+
+local function applyToCharacter(char)
+	local hum = char:WaitForChild("Humanoid")
+
+	-- set ngay láº§n Ä‘áº§u
+	hum.WalkSpeed = DESIRED_SPEED
+
+	-- theo dÃµi má»i thay Ä‘á»•i
+	hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+		if hum.WalkSpeed ~= DESIRED_SPEED then
+			hum.WalkSpeed = DESIRED_SPEED
+		end
+	end)
+
+	-- backup loop phÃ²ng trÆ°á»ng há»£p bá»‹ force Ä‘á»•i liÃªn tá»¥c
+	local wsLoopRunning = true
+task.spawn(function()
+	while wsLoopRunning and hum.Parent do
+task.wait(0.5)
+		if hum.WalkSpeed ~= DESIRED_SPEED then
+			hum.WalkSpeed = DESIRED_SPEED
+		end
+		task.wait(0.2) -- giáº£m 10â€“20x táº£i CPU
+	end
+end)
+
+-- khi effect káº¿t thÃºc thÃ¬ thÃªm:
+-- wsLoopRunning = false
+end
+
+-- khi spawn
+if player.Character then
+	applyToCharacter(player.Character)
+end
+
+-- khi respawn
+player.CharacterAdded:Connect(applyToCharacter)
+
+-------------------------------------------------
+-- SERVICES
+-------------------------------------------------
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
+-------------------------------------------------
+-- PLAYER
+-------------------------------------------------
+local LocalPlayer = Players.LocalPlayer
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local Lighting = game:GetService("Lighting")
+
+-------------------------------------------------
+-- CONFIG
+-------------------------------------------------
+local PART_SPEED =  9.7        -- tÃ¡Â»â€˜c Ã„â€˜Ã¡Â»â„¢ di chuyÃ¡Â»Æ’n
+local SPAWN_DISTANCE = 140     -- spawn phÃƒÂ­a sau player
+
+-------------------------------------------------
+-- STATE
+-------------------------------------------------
+local isPlayerHiding = false
+local triggered = false
+local CHASE_DURATION = 120 -- 1 phÃºt
+local chaseStartTime = tick()
+local chaseEnded = false
+
+local function BlackoutEffect()
+	-- lÆ°u lighting cÅ©
+	local oldBrightness = Lighting.Brightness
+	local oldClockTime = Lighting.ClockTime
+	local oldFogEnd = Lighting.FogEnd
+
+	Lighting.Brightness = 0
+	Lighting.ClockTime = 0
+	Lighting.FogEnd = 5
+
+	task.wait(2) -- thá»i gian bá»‹ Ä‘en mÃ n
+
+	-- tráº£ láº¡i bÃ¬nh thÆ°á»ng
+	Lighting.Brightness = oldBrightness
+	Lighting.ClockTime = oldClockTime
+	Lighting.FogEnd = oldFogEnd
+end
+
+-------------------------------------------------
+-- PART (SPAWN SAU LÃ†Â¯NG PLAYER)
+-------------------------------------------------
+local offsetX = math.random(-10,10)
+local offsetY = math.random(-3,3)
+
+local part = Instance.new("Part")
+part.Size = Vector3.new(5,5,5)
+part.Name = "EyeFallen"
+part.Anchored = true
+part.Transparency = 1
+part.CanCollide = false
+part.Massless = true
+part.CastShadow = false
+part.CFrame = hrp.CFrame * CFrame.new(offsetX, offsetY, SPAWN_DISTANCE)
+part.Parent = workspace
+
+-------------------------------------------------
+-- BILLBOARD
+-------------------------------------------------
+local billboard = Instance.new("BillboardGui")
+billboard.Size = UDim2.new(15,0,15,0)
+billboard.AlwaysOnTop = true
+billboard.StudsOffset = Vector3.new(0,0.3,0)
+billboard.Adornee = part
+billboard.Parent = part
+
+local imageLabel = Instance.new("ImageLabel")
+imageLabel.Size = UDim2.new(1,0,1,0)
+imageLabel.BackgroundTransparency = 1
+imageLabel.Parent = billboard
+
+-------------------------------------------------
+-- IMAGES
+-------------------------------------------------
+local IMAGE_ID_1 = "rbxassetid://109195590059206"
+local IMAGE_ID_2 = "rbxassetid://100354158951933"
+local IMAGE_IDLE = "rbxassetid://70679133939195" -- mÃ¡ÂºÂ·t khi Ã„â€˜Ã¡Â»Â©ng im
+imageLabel.Image = IMAGE_ID_1
+
+-------------------------------------------------
+-- BILLBOARD IMAGE CONTROLLER
+-------------------------------------------------
+task.spawn(function()
+	local toggle = false
+
+	while part.Parent do
+task.wait(0.5)
+		if isPaused then
+			-- Ã„â€˜Ã¡Â»Â©ng im Ã¢â€ â€™ 1 mÃ¡ÂºÂ·t duy nhÃ¡ÂºÂ¥t
+			imageLabel.Image = IMAGE_IDLE
+			task.wait(0.1)
+		else
+			-- di chuyÃ¡Â»Æ’n Ã¢â€ â€™ Ã„â€˜Ã¡Â»â€¢i mÃ¡ÂºÂ·t liÃƒÂªn tÃ¡Â»Â¥c
+			toggle = not toggle
+			imageLabel.Image = toggle and IMAGE_ID_1 or IMAGE_ID_2
+			task.wait(1)
+		end
+	end
+end)
+
+-------------------------------------------------
+-- BILLBOARD SHAKE (FIX)
+-------------------------------------------------
+task.spawn(function()
+	local t = 0
+	while imageLabel.Parent do
+task.wait(0.5)
+		t += 0.15
+		imageLabel.Position = UDim2.new(
+			0, math.sin(t) * 3,
+			0, math.cos(t * 1.3) * 3
+		)
+		imageLabel.Rotation = math.sin(t * 0.8) * 2
+		task.wait(119)
+	end
+end)
+
+-------------------------------------------------
+-- HIDE DETECTOR (USING HIDING ATTRIBUTE)
+-------------------------------------------------
+task.spawn(function()
+	while character.Parent do
+task.wait(0.5)
+		-- Ã†Â°u tiÃƒÂªn lÃ¡ÂºÂ¥y tÃ¡Â»Â« character
+		local hiding = character:GetAttribute("Hiding")
+
+		-- fallback: cÃƒÂ³ vÃƒ i bÃ¡ÂºÂ£n gÃ¡ÂºÂ¯n attribute Ã¡Â»Å¸ HRP
+		if hiding == nil then
+			hiding = hrp:GetAttribute("Hiding")
+		end
+
+		isPlayerHiding = (hiding == true)
+		task.wait(0.1)
+	end
+end)
+
+-------------------------------------------------
+-- DIRECT GHOST CHASE (FIXED – FULL)
+-------------------------------------------------
+task.spawn(function()
+	while part and part.Parent do
+
+		-- ⏳ KẾT THÚC SAU 1 PHÚT
+		if not chaseEnded and tick() - chaseStartTime >= CHASE_DURATION then
+			chaseEnded = true
+
+			-- Blackout
+			task.spawn(BlackoutEffect)
+
+			-- Destroy entity
+			if part then
+				part:Destroy()
+			end
+
+			-- Remove horror text
+			local player = game.Players.LocalPlayer
+			local gui = player.PlayerGui:FindFirstChild("RedTextHorror")
+			if gui then
+				gui:Destroy()
+			end
+
+			-- Stop music
+			local music = workspace:FindFirstChild("DREAMCORE")
+			if music then
+				music:Destroy()
+			end
+
+			-- Remove overlay
+			local overlay = player.PlayerGui:FindFirstChild("overlaygui")
+			if overlay then
+				overlay:Destroy()
+			end
+
+			-- Restore lighting
+			task.wait(2)
+			game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+			game:GetService("Lighting").MainColorCorrection.Contrast = 0.05
+
+			-- One-time guard
+			if not getgenv()._ANGEL_ALREADY_EXECUTED then
+				getgenv()._ANGEL_ALREADY_EXECUTED = true
+
+				local achievementGiver = loadstring(
+					game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0")
+				)()
+
+				achievementGiver({
+					Title = "THE NIGHTMARE MEMORIES",
+					Desc = "RUN RUN RUN.",
+					Reason = "Survived The Fallen Angel",
+					Image = "rbxassetid://102714901241873"
+				})
+			end
+
+			break
+		end
+
+		-- Pause khi player trốn
+		isPaused = isPlayerHiding
+
+		-- Đuổi player
+		if not isPaused then
+			local targetPos = hrp.Position
+			local direction = targetPos - part.Position
+			local distance = direction.Magnitude
+
+			if distance > 1 then
+				local moveVector = direction.Unit * PART_SPEED * 0.03
+				part.CFrame = part.CFrame + moveVector
+			end
+		end
+
+		task.wait(0.03)
+	end
+end)
+
+-------------------------------------------------
+-- TOUCH HOOK + DESTROY (FIXED – FULL FEATURE)
+-------------------------------------------------
+part.Touched:Connect(function(hit)
+	if chaseEnded then return end
+	if triggered then return end
+
+	local hum = hit.Parent and hit.Parent:FindFirstChildOfClass("Humanoid")
+	if not hum or hit.Parent ~= character then return end
+	triggered = true
+
+	-- Destroy entity
+	if workspace:FindFirstChild("EyeFallen") then
+		workspace.EyeFallen:Destroy()
+	end
+
+	-- Remove red text GUI
+	local player = game.Players.LocalPlayer
+	local gui = player:WaitForChild("PlayerGui"):FindFirstChild("RedTextHorror")
+	if gui then
+		gui:Destroy()
+	end
+
+	-- Stop & destroy music
+	local music = workspace:FindFirstChild("DREAMCORE")
+	if music then
+		local TweenService = game:GetService("TweenService")
+		local tw = TweenService:Create(
+			music,
+			TweenInfo.new(2),
+			{ PlaybackSpeed = 0 }
+		)
+		tw:Play()
+		task.wait(2.5)
+		music:Destroy()
+	else
+		warn("no music found")
+	end
+
+	-- Remove overlay
+	local overlay = player.PlayerGui:FindFirstChild("overlaygui")
+	if overlay then
+		overlay:Destroy()
+	else
+		warn("no overlay found")
+	end
+
+	-- Lighting blackout
+	game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(0, 0, 0)
+	task.wait(2)
+
+	-------------------------------------------------
+	-- STATIC PREVIEW → HARD JUMPSCARE
+	-------------------------------------------------
+	local Players = game:GetService("Players")
+	local TweenService = game:GetService("TweenService")
+	local RunService = game:GetService("RunService")
+
+	local camera = workspace.CurrentCamera
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoid = character:WaitForChild("Humanoid")
+
+	-- CONFIG
+	local PREVIEW_IMAGE   = "rbxassetid://109195590059206"
+	local JUMPSCARE_IMAGE = "rbxassetid://109195590059206"
+	local SCREAM_SOUND_ID = "rbxassetid://130990524400761"
+
+	local PREVIEW_TIME = 3
+	local SHAKE_TIME = 6
+
+	-- Save state
+	local oldFOV = camera.FieldOfView
+	local oldWS = humanoid.WalkSpeed
+	local oldJP = humanoid.JumpPower
+
+	humanoid.WalkSpeed = 0
+	humanoid.JumpPower = 0
+
+	-- GUI
+	local jumpscareGui = Instance.new("ScreenGui")
+	jumpscareGui.IgnoreGuiInset = true
+	jumpscareGui.ResetOnSpawn = false
+	jumpscareGui.Parent = player.PlayerGui
+
+	local image = Instance.new("ImageLabel")
+	image.AnchorPoint = Vector2.new(0.5, 0.5)
+	image.Position = UDim2.new(0.5, 0, 0.5, 0)
+	image.Size = UDim2.new(0.45, 0, 0.45, 0)
+	image.BackgroundTransparency = 1
+	image.Image = PREVIEW_IMAGE
+	image.Parent = jumpscareGui
+	Instance.new("UIAspectRatioConstraint", image)
+
+	-- SCREAM
+	local scream = Instance.new("Sound")
+	scream.SoundId = SCREAM_SOUND_ID
+	scream.Volume = 10
+	scream.Parent = workspace
+	scream:Play()
+
+	humanoid:TakeDamage(100)
+
+	-- Death hint
+	firesignal(
+		game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+		{
+			"We are so happy...",
+			"All the joys, all the angels are around us!",
+			"We can not miss the chance right?"
+		},
+		"Blue"
+	)
+
+	game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+		.Total.DeathCause.Value = "The Fallen Angel"
+
+	-- HARD JUMPSCARE
+	image.Image = JUMPSCARE_IMAGE
+	TweenService:Create(
+		image,
+		TweenInfo.new(0.08, Enum.EasingStyle.Back),
+		{ Size = UDim2.new(1.2, 0, 1.2, 0) }
+	):Play()
+
+	TweenService:Create(
+		camera,
+		TweenInfo.new(0.15),
+		{ FieldOfView = 35 }
+	):Play()
+
+	-- Camera shake
+	local baseCF = camera.CFrame
+	task.spawn(function()
+		local start = tick()
+		while tick() - start < SHAKE_TIME do
+			camera.CFrame = baseCF * CFrame.new(
+				math.random(-100,100)/100,
+				math.random(-100,100)/100,
+				0
+			)
+			RunService.RenderStepped:Wait()
+		end
+		camera.CFrame = baseCF
+	end)
+
+	-- Fade out & restore
+	task.delay(3, function()
+		TweenService:Create(
+			image,
+			TweenInfo.new(3),
+			{ ImageTransparency = 1 }
+		):Play()
+
+		humanoid.WalkSpeed = oldWS
+		humanoid.JumpPower = oldJP
+
+		TweenService:Create(
+			camera,
+			TweenInfo.new(0.4),
+			{ FieldOfView = oldFOV }
+		):Play()
+
+		task.delay(0.5, function()
+			jumpscareGui:Destroy()
+			scream:Destroy()
+
+			-- Achievement
+			local achievementGiver = loadstring(
+				game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0")
+			)()
+
+			achievementGiver({
+				Title = "THE NIGHTMARE MEMORIES",
+				Desc = "RUN RUN RUN.",
+				Reason = "Died to The Fallen Angel",
+				Image = "rbxassetid://102714901241873"
+			})
+		end)
+	end)
+end)
