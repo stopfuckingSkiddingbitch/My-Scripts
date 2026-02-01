@@ -41,12 +41,12 @@ local model = ball
 
 game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
 -- One-time execute guard
-if getgenv()._ECLIP_ALREADY_EXECUTED then
+if getgenv()._BALL_ALREADY_EXECUTED then
     warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
     return
 end
 
-getgenv()._ECLIP_ALREADY_EXECUTED = true
+getgenv()._BALL_ALREADY_EXECUTED = true
 
 -- ======================
 -- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
