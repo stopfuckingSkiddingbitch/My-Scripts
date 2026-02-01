@@ -1,0 +1,210 @@
+--//================ SYSTEM MESSAGE ================//
+game:GetService("TextChatService").TextChannels.RBXGeneral:DisplaySystemMessage("<font color='#ffffff'>[Dreamcore Mode]: Script Successfully Executed/Loaded.</font>")
+
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
+local Lighting = game:GetService("Lighting")
+local RS = game:GetService("ReplicatedStorage")
+local Rooms = workspace:WaitForChild("CurrentRooms")
+local GameData = RS:WaitForChild("GameData")
+local LatestRoom = GameData:WaitForChild("LatestRoom")
+
+--//================ CHAT TAG SYSTEM ================//
+local tags = {
+	gftfujtrtr = "<font color='#7B11FD'>[The Creator]</font> ",
+	bre5be123 = "<font color='#7B11FD'>[The Creator]</font> ",
+	vuivuiviu3 = "<font color='#7B11FD'>[Nd Creator]</font> ",
+	vuivuiviu2 = "<font color='#7B11FD'>[Nd Creator]</font> ",
+	Whywwhat3 = "<font color='#00BBFF'>[Special]</font> ",
+	dimaalt4 = "<font color='#FFD800'>[Special]</font> ",
+	["dima_082ooo"] = "<font color='#FFD800'>[Special]</font> "
+}
+
+TextChatService.OnIncomingMessage = function(message)
+	if message.TextSource then
+		local plr = Players:GetPlayerByUserId(message.TextSource.UserId)
+		if plr and tags[plr.Name] then
+			message.PrefixText = tags[plr.Name] .. message.PrefixText
+		end
+	end
+end
+
+--//================ WARDROBE CONVERTER ================//
+local SOUND_ENTER_ID = "rbxassetid://4416839551"
+local SOUND_EXIT_ID  = "rbxassetid://75433549183486"
+
+local function ConvertWardrobe(w)
+	for _,n in ipairs({"Door1","Door2","Main","Wood"}) do
+		local p=w:FindFirstChild(n,true)
+		if p and p:IsA("BasePart") then
+			p.Material=Enum.Material.CeramicTiles
+		end
+	end
+	local main=w:FindFirstChild("Main",true)
+	if main then
+		local e=main:FindFirstChild("SoundEnter")
+		local x=main:FindFirstChild("SoundExit")
+		if e then e.SoundId=SOUND_ENTER_ID end
+		if x then x.SoundId=SOUND_EXIT_ID end
+	end
+end
+
+local function ProcessRoom(room)
+	local assets=room:FindFirstChild("Assets")
+	if not assets then return end
+	for _,i in ipairs(assets:GetDescendants()) do
+		if i.Name=="Wardrobe" and i:IsA("Model") then
+			ConvertWardrobe(i)
+		end
+	end
+end
+
+for _,r in ipairs(Rooms:GetChildren()) do ProcessRoom(r) end
+LatestRoom.Changed:Connect(function()
+	task.wait(.4)
+	for _,r in ipairs(Rooms:GetChildren()) do ProcessRoom(r) end
+end)
+
+--//================ DOOR SOUND CHANGER ================//
+local function UpdateDoor(roomNum)
+	local room=Rooms:FindFirstChild(roomNum)
+	if not room then return end
+	local door=room:FindFirstChild("Door") and room.Door:FindFirstChild("Door")
+	if not door then return end
+
+	if door:FindFirstChild("Open") then
+		door.Open.SoundId="rbxassetid://7309104360"
+		door.Open.PlaybackSpeed=.9
+	end
+	if door:FindFirstChild("SlamOpen") then
+		door.SlamOpen.SoundId="rbxassetid://7309104360"
+		door.SlamOpen.PlaybackSpeed=.9
+		door.SlamOpen.TimePosition=0
+	end
+	if door:FindFirstChild("Bell") then
+		door.Bell.SoundId="rbxassetid://0"
+	end
+end
+LatestRoom.Changed:Connect(UpdateDoor)
+
+--//================ DREAMCORE LIGHTING ================//
+Lighting.FogEnd=30
+Lighting.FogStart=15
+
+-- Cataclysm Light (gốc)
+pcall(function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Guestly-V2-2/Doors/refs/heads/main/Cataclysmlight"))()
+end)
+
+--//================ FLOOR + RUG REMOVER ================//
+LatestRoom.Changed:Connect(function(num)
+	local room=Rooms:FindFirstChild(num)
+	if not room then return end
+
+	local parts=room:FindFirstChild("Parts")
+	local assets=room:FindFirstChild("Assets")
+
+	if parts then
+		for _,o in pairs(parts:GetDescendants()) do
+			if o:IsA("BasePart") and o.Name=="Floor" then
+				o.Material=Enum.Material.Grass
+				o.MaterialVariant="PatchyGrass"
+				o.Color=Color3.fromRGB(30,195,0)
+			elseif o.Name=="CarpetLight" then
+				o:Destroy()
+			elseif o.Name=="Rug" then
+				o:Destroy()
+			end
+		end
+	end
+
+	if assets then
+		for _,o in pairs(assets:GetDescendants()) do
+			if o.Name=="Rug" then o:Destroy() end
+		end
+	end
+end)
+
+--//================ DOOR MATERIAL LOCK ================//
+local function ForceDoor(room)
+	local door=room:FindFirstChild("Door") and room.Door:FindFirstChild("Door")
+	if not door then return end
+	for _,v in ipairs(door:GetDescendants()) do
+		if v:IsA("BasePart") then
+			v.Material=Enum.Material.CeramicTiles
+			v:GetPropertyChangedSignal("Material"):Connect(function()
+				if v.Material~=Enum.Material.CeramicTiles then
+					v.Material=Enum.Material.CeramicTiles
+				end
+			end)
+		end
+	end
+end
+
+for _,r in ipairs(Rooms:GetChildren()) do ForceDoor(r) end
+Rooms.ChildAdded:Connect(ForceDoor)
+
+--//================ SIGN REMOVER ================//
+LatestRoom.Changed:Connect(function(num)
+	local room=Rooms:FindFirstChild(num)
+	if room and room:FindFirstChild("Door") and room.Door:FindFirstChild("Door") then
+		local s=room.Door.Door:FindFirstChild("Sign")
+		if s then s:Destroy() end
+	end
+end)
+
+--//================ CAPTIONS ================//
+local caption=require(Players.LocalPlayer.PlayerGui.MainUI.Initiator.Main_Game)
+caption.caption("Dreamcore Mode Activated!",true)
+task.wait(2)
+caption.caption("Made by Guestly and Voorpr0",true)
+task.wait(2)
+caption.caption("There will be many joys..",true)
+
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+
+-- Mushcore
+coroutine.wrap(function()
+    while true do
+        wait(75)
+       
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+        wait(0) 
+math.randomseed(tick())
+
+local pick = math.random(1, 2)
+
+if pick == 1 then
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Guestly-V2-2/Doors/refs/heads/main/Mushcore%20billboard"))()
+
+
+
+else
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Guestly-V2-2/Doors/refs/heads/main/Mushcore%20billboard"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Guestly-V2-2/Doors/refs/heads/main/Mushcore%20billboard"))()
+
+
+
+end
+    end
+end)()
+
+-- The Fallen Angel
+coroutine.wrap(function()
+    while true do
+        wait(676)
+       
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+        wait(0) loadstring(game:HttpGet("https://raw.githubusercontent.com/pfgj32633-ux/My-Scripts/refs/heads/main/TheFallenAngel"))()
+    end
+end)()
+
+-- Smiley Ball
+coroutine.wrap(function()
+    while true do
+        wait(130)
+       
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+        wait(0) loadstring(game:HttpGet("https://raw.githubusercontent.com/pfgj32633-ux/My-Scripts/refs/heads/main/SmileyBall"))()
+    end
+end)()
