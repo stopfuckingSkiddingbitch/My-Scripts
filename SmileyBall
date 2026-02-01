@@ -38,3 +38,28 @@ local model = ball
 			floor.CFrame
 			* CFrame.new(offsetX, 5, offsetZ)
 	end
+
+game.ReplicatedStorage.GameData.LatestRoom.Changed:Wait()
+-- One-time execute guard
+if getgenv()._ECLIP_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._ECLIP_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "Safety Deception ",
+    Desc = "I'm not dangerous, but they are.",
+    Reason = "Met Frens.",
+    Image = "rbxassetid://125355033538360"
+})
