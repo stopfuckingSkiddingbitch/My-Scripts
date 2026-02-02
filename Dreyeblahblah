@@ -1,0 +1,313 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- ===== SETTINGS =====
+local IMAGE_ID = "rbxassetid://115630682424016"
+local SOUND_ID = "rbxassetid://3619734707"
+
+local SHAKE_INTENSITY = 6
+local DEATH_MODE_DELAY = 1.5
+local STAND_STILL_TIME = 2
+local MOVE_THRESHOLD = 0.15
+
+-- ===== STATES =====
+local deathMode = false
+local destroyed = false
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local img = Instance.new("ImageLabel")
+img.BackgroundTransparency = 1
+img.Image = IMAGE_ID
+img.AnchorPoint = Vector2.new(0.5, 0.5)
+img.Position = UDim2.fromScale(0.5, 0.5)
+img.Size = UDim2.fromScale(0.4, 0.4)
+img.ScaleType = Enum.ScaleType.Fit -- giữ tỉ lệ gốc
+img.Parent = gui
+
+-- ===== SOUND =====
+local sound = Instance.new("Sound")
+sound.SoundId = SOUND_ID
+sound.Looped = false
+sound.Volume = 5
+sound.Parent = gui
+sound:Play()
+
+local effect = Instance.new("DistortionSoundEffect", sound)
+
+-- ===== SHAKE =====
+local basePos = img.Position
+local shakeConn
+
+shakeConn = RunService.RenderStepped:Connect(function()
+	if destroyed then return end
+	local x = math.random(-SHAKE_INTENSITY, SHAKE_INTENSITY)
+	local y = math.random(-SHAKE_INTENSITY, SHAKE_INTENSITY)
+	img.Position = basePos + UDim2.fromOffset(x, y)
+end)
+
+-- ===== CLEANUP =====
+local function resetAll()
+	if destroyed then return end
+	destroyed = true
+	deathMode = false
+	
+	if shakeConn then
+		shakeConn:Disconnect()
+	end
+	
+	sound:Destroy()
+	gui:Destroy()
+end
+
+-- ===== DEATH HOOK =====
+local function activateDeathHook()
+	print("DEATH HOOK TRIGGERED")
+gui:Destroy()
+	sound:Destroy() -- tắt sound khi chết
+	game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(0, 0, 0)
+wait(2)
+game.Lighting.MainColorCorrection.TintColor = Color3.fromRGB(255, 255, 255)
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+--// SERVICES
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// REMOVE OLD GUI
+pcall(function()
+	if CoreGui:FindFirstChild("JumpscareGui") then
+		CoreGui.JumpscareGui:Destroy()
+	end
+end)
+
+--// LOAD SOUND
+local function loadSound(data)
+	local sound = Instance.new("Sound")
+	local id = tostring(data[1])
+	local props = data[2] or {}
+
+	for k, v in pairs(props) do
+		if k ~= "SoundId" and k ~= "Parent" then
+			sound[k] = v
+		end
+	end
+
+	if id:find("rbxasset://") then
+		sound.SoundId = id
+	else
+		sound.SoundId = "rbxassetid://" .. id:gsub("%D", "")
+	end
+
+	sound.Parent = workspace
+	return sound
+end
+
+--// CONFIG (BẠN CÓ THỂ CHỈNH)
+local config = {
+	Image1 = "rbxassetid://115630682424016",
+	Image2 = "rbxassetid://115630682424016",
+
+	Shake = true,
+
+	Sound1 = {89321432056195, {Volume = 10}},
+	Sound2 = {89321432056195, {Volume = 10}},
+
+	Flashing = {
+		true,
+		Color3.fromRGB(0, 0, 0)
+	},
+
+	Tease = {
+		true,
+		Min = 2,
+		Max = 4
+	}
+}
+
+--// CREATE GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JumpscareGui"
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BorderSizePixel = 0
+bg.ZIndex = 999
+bg.Parent = gui
+
+local face = Instance.new("ImageLabel")
+face.AnchorPoint = Vector2.new(0.5, 0.5)
+face.Position = UDim2.new(0.5, 0, 0.5, 0)
+face.Size = UDim2.new(0, 150, 0, 150)
+face.BackgroundTransparency = 1
+face.Image = config.Image1
+face.ResampleMode = Enum.ResamplerMode.Pixelated
+face.Parent = bg
+
+--// SIZES
+local screenY = gui.AbsoluteSize.Y
+local minSize = screenY / 5
+local maxSize = screenY / 2.5
+
+--// TEASE
+local sound1, sound2
+if config.Sound1 then sound1 = loadSound(config.Sound1) end
+if config.Sound2 then sound2 = loadSound(config.Sound2) end
+
+if config.Tease and config.Tease[1] then
+	local loops = math.random(config.Tease.Min, config.Tease.Max)
+	if sound1 then sound1:Play() end
+
+	for _ = 1, loops do
+		task.wait(math.random(10, 20) / 100)
+		local grow = (maxSize - minSize) / loops
+		face.Size = face.Size + UDim2.new(0, grow, 0, grow)
+	end
+end
+
+--// FLASHING
+if config.Flashing and config.Flashing[1] then
+	task.spawn(function()
+		while gui.Parent do
+			bg.BackgroundColor3 = config.Flashing[2]
+			task.wait(math.random(25, 100) / 1000)
+			bg.BackgroundColor3 = Color3.new(0, 0, 0)
+			task.wait(math.random(25, 100) / 1000)
+		end
+	end)
+end
+
+--// SHAKE
+if config.Shake then
+	task.spawn(function()
+		local basePos = face.Position
+		while gui.Parent do
+			face.Position = basePos + UDim2.new(0, math.random(-10, 10), 0, math.random(-10, 10))
+			face.Rotation = math.random(-5, 5)
+			task.wait()
+		end
+	end)
+end
+
+--// FINAL JUMPSCARE
+face.Image = config.Image2
+face.Size = UDim2.new(0, maxSize, 0, maxSize)
+
+if sound2 then sound2:Play() end
+
+TweenService:Create(face, TweenInfo.new(0.75), {
+	Size = UDim2.new(0, screenY * 3, 0, screenY * 3),
+	ImageTransparency = 0.5
+}):Play()
+
+task.wait(0.75)
+
+--// CLEANUP
+gui:Destroy()
+if sound1 then sound1:Destroy() end
+if sound2 then sound2:Destroy() end
+
+humanoid:TakeDamage(100)
+
+-- ================= DEATH HINT =================
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "Everyone must be stay quiet but you.",
+        "Why..?",
+        "WHY WHY WHY WHY WHY?????"
+    },
+    "Blue"
+)
+
+game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+    .Total.DeathCause.Value = "Dreye"
+
+-- One-time execute guard
+if getgenv()._EYE_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._EYE_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Stalking Eye",
+    Desc = "Why?",
+    Reason = "Encountered Dreye.",
+    Image = "rbxassetid://91291934340764"
+})
+end
+
+-- ===== CHECK ĐỨNG IM =====
+local function checkIfStill()
+	local startPos = hrp.Position
+	task.wait(STAND_STILL_TIME)
+	
+	if destroyed then return end
+	
+	local movedDist = (hrp.Position - startPos).Magnitude
+	
+	if movedDist <= MOVE_THRESHOLD then
+		-- SỐNG SÓT
+		resetAll()
+-- One-time execute guard
+if getgenv()._EYE_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._EYE_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Stalking Eye",
+    Desc = "Why?",
+    Reason = "Survived from Dreye.",
+    Image = "rbxassetid://91291934340764"
+})
+	else
+		-- CHẾT
+		activateDeathHook()
+		resetAll()
+	end
+end
+
+-- ===== FLOW =====
+task.wait(DEATH_MODE_DELAY)
+if destroyed then return end
+
+deathMode = true
+checkIfStill()
