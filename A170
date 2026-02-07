@@ -1,0 +1,233 @@
+local cue2 = Instance.new("Sound")
+	cue2.Parent = game.Workspace
+	cue2.Name = "Scratch"
+	cue2.SoundId = "rbxassetid://79545729106293"
+	cue2.Volume = 1
+	cue2.PlaybackSpeed = 1
+  cue2:Play()
+
+wait(5)
+
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LatestRoom = RS:WaitForChild("GameData"):WaitForChild("LatestRoom")
+
+-- ===== TẠO MODEL A170 =====
+local a170 = Instance.new("Model")
+a170.Name = "A170"
+a170.Parent = workspace
+
+local part = Instance.new("Part")
+part.Size = Vector3.new(5,5,5)
+part.Anchored = true
+part.Transparency = 1
+part.CanCollide = false
+part.Name = "Body"
+part.Parent = a170
+
+a170.PrimaryPart = part
+
+local light = Instance.new("PointLight", part)
+light.Range = 8
+light.Brightness = 2
+light.Color = Color3.fromRGB(255,0,0)
+
+local billboard = Instance.new("BillboardGui", part)
+billboard.Size = UDim2.new(15,0,15,0)
+billboard.AlwaysOnTop = false
+billboard.StudsOffset = Vector3.new(0,0.3,0)
+billboard.Adornee = part
+
+local imageLabel = Instance.new("ImageLabel", billboard)
+imageLabel.Size = UDim2.new(1,0,1,0)
+imageLabel.BackgroundTransparency = 1
+imageLabel.Image = "rbxassetid://91317341334033"
+
+-- ===== CONFIG =====
+local MODEL = a170
+local DAMAGE_PER_SEC = 9
+local HITBOX_SIZE = Vector3.new(95,95,95)
+
+local active = true
+local hitbox
+
+-- ===== DEATH HOOK =====
+local function DeathHook(player)
+	if _G.EntityDeathHook then
+		_G.EntityDeathHook(player)
+	end
+
+-- ================= DEATH HINT =================
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "You died to who called A-170",
+        "When he appears, there are scratching sounds",
+        "Hide before too late."
+    },
+    "Blue"
+)
+
+game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+    .Total.DeathCause.Value = "A-170"
+end
+
+-- ===== HITBOX =====
+local function createHitbox(model)
+	hitbox = Instance.new("Part")
+	hitbox.Size = HITBOX_SIZE
+	hitbox.Transparency = 1
+	hitbox.Anchored = true
+	hitbox.CanCollide = false
+	hitbox.Name = "DamageZone"
+	hitbox.Parent = workspace
+
+	RunService.Heartbeat:Connect(function()
+		if active and model.PrimaryPart then
+			hitbox.CFrame = model.PrimaryPart.CFrame
+		end
+	end)
+end
+
+-- ===== DAMAGE =====
+local function startDamageLoop()
+	while active do
+		for _,player in pairs(Players:GetPlayers()) do
+			local char = player.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			local root = char and char:FindFirstChild("HumanoidRootPart")
+
+			if hum and root and hum.Health > 0 then
+				local dist = (root.Position - hitbox.Position).Magnitude
+				if dist <= HITBOX_SIZE.X/2 then
+					hum:TakeDamage(DAMAGE_PER_SEC)
+					if hum.Health <= 0 then
+						DeathHook(player)
+					end
+				end
+			end
+		end
+		task.wait(1)
+	end
+end
+
+-- ===== DESTROY ENTITY =====
+local function destroyEntity()
+	active = false
+	task.wait(2)
+
+	if hitbox then hitbox:Destroy() end
+	if MODEL then MODEL:Destroy() end
+
+-- One-time execute guard
+if getgenv()._RED_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._RED_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Prying",
+    Desc = "Bro stop scratching!",
+    Reason = "Encountered A-170",
+    Image = "rbxassetid://91317341334033"
+})
+end
+
+-- ===== MOVE =====
+local function moveEntity(model)
+	local rooms = workspace.CurrentRooms:GetChildren()
+	table.sort(rooms, function(a,b)
+		return tonumber(a.Name) > tonumber(b.Name)
+	end)
+
+	local oldestRoom = nil
+
+	for i,room in ipairs(rooms) do
+		local entrance = room:FindFirstChild("RoomEntrance")
+		if entrance then
+			oldestRoom = room
+
+			local tween = TweenService:Create(
+				model.PrimaryPart,
+				TweenInfo.new(2, Enum.EasingStyle.Linear),
+				{CFrame = entrance.CFrame}
+			)
+			tween:Play()
+			tween.Completed:Wait()
+		end
+	end
+
+	-- Tới phòng cũ nhất
+	if oldestRoom and oldestRoom:FindFirstChild("RoomEntrance") then
+		destroyEntity()
+	end
+end
+
+-- ===== SPAWN =====
+local function spawnEntity(roomNumber)
+	local room = workspace.CurrentRooms:FindFirstChild(tostring(roomNumber))
+	if not room then return end
+
+	local exit = room:WaitForChild("RoomExit",5)
+	if not exit then return end
+
+	MODEL:SetPrimaryPartCFrame(exit.CFrame)
+
+	createHitbox(MODEL)
+
+	task.spawn(startDamageLoop)
+	task.spawn(function()
+		moveEntity(MODEL)
+	end)
+end
+
+-- ===== LẤY PHÒNG MỚI NHẤT TRONG MAP =====
+local function getLatestRoom()
+	local rooms = workspace:WaitForChild("CurrentRooms"):GetChildren()
+	local latest = nil
+	local max = -math.huge
+
+	for _,room in pairs(rooms) do
+		local num = tonumber(room.Name)
+		if num and num > max then
+			max = num
+			latest = room
+		end
+	end
+
+	return latest
+end
+
+-- ===== SPAWN 1 LẦN DUY NHẤT Ở PHÒNG MỚI NHẤT =====
+task.spawn(function()
+	task.wait(2) -- đợi rooms load xong
+
+	local latestRoom = getLatestRoom()
+	if not latestRoom then return end
+
+	local exit = latestRoom:WaitForChild("RoomExit",5)
+	if not exit then return end
+
+	MODEL:SetPrimaryPartCFrame(exit.CFrame)
+
+	createHitbox(MODEL)
+
+	task.spawn(startDamageLoop)
+	task.spawn(function()
+		moveEntity(MODEL)
+	end)
+end)
