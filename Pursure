@@ -7,7 +7,7 @@ local spawner = loadstring(game:HttpGet("https://raw.githubusercontent.com/Regul
 local entity = spawner.Create({
 	Entity = {
 		Name = "Pursure",
-		Asset = "rbxassetid://12789806614",
+		Asset = "rbxassetid://134619556527917",
 		HeightOffset = 0
 	},
 	Lights = {
@@ -60,16 +60,6 @@ local entity = spawner.Create({
 
 entity:SetCallback("OnSpawned", function()
     print("Entity has spawned")
-workspace.Pursure.RushNew.Attachment.PointLight.Color = Color3.fromRGB(255,0,0)
-	workspace.Pursure.RushNew.Footsteps.SoundId = "rbxassetid://136992416500756"
-workspace.Pursure.RushNew.Footsteps.PlaybackSpeed = 0.8
-local effect = Instance.new("DistortionSoundEffect", workspace.Pursure.RushNew.Footsteps)
-
-workspace.Pursure.RushNew.PlaySound:Destroy()
-	workspace.Pursure.RushNew.Attachment.ParticleEmitter.Texture = "rbxassetid://131708596443120"
-	workspace.Pursure.RushNew.Attachment.PointLight.Brightness = 8
-	workspace.Pursure.RushNew.Attachment.PointLight.Range = 20
-	workspace.Pursure.RushNew.Attachment.PointLight.Enabled = true
 end)
 
 entity:SetCallback("OnStartMoving", function()
