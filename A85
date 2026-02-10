@@ -1,3 +1,29 @@
+local _ColorCorrectionEffect = Instance.new('ColorCorrectionEffect', game.Lighting)
+
+game.Debris:AddItem(_ColorCorrectionEffect, 24)
+
+_ColorCorrectionEffect.Name = 'SmileWarn'
+_ColorCorrectionEffect.TintColor = Color3.fromRGB(255, 255, 254)
+_ColorCorrectionEffect.Saturation = -0.7
+_ColorCorrectionEffect.Contrast = 0.2
+
+game.TweenService:Create(_ColorCorrectionEffect, TweenInfo.new(10), {
+    TintColor = Color3.fromRGB(255, 255, 255),
+    Saturation = 0,
+    Contrast = 0,
+}):Play()
+
+local v8 = require(game.ReplicatedStorage.CameraShaker)
+local _CurrentCamera = game.Workspace.CurrentCamera
+local v11 = v8.new(Enum.RenderPriority.Camera.Value, function(p10)
+    _CurrentCamera.CFrame = _CurrentCamera.CFrame * p10
+end)
+
+v11:Start()
+v11:ShakeOnce(1, 0.5, 0.4, 0.3, 0.2, 0.1)
+
+wait(5)
+
 --// ===== CONFIG =====
 local MODEL_ID = "rbxassetid://139707036517840"
 local DAMAGE_PER_SECOND = 25
