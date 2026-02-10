@@ -1,0 +1,321 @@
+--// ===== CONFIG =====
+local MODEL_ID = "rbxassetid://99027149403935"
+local MOVE_INTERVAL = 5
+local MOVE_SPEED = 40
+
+--// ===== SERVICES =====
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RS = game:GetService("ReplicatedStorage")
+
+--// ===== ROOM =====
+local latestRoomValue = RS:WaitForChild("GameData"):WaitForChild("LatestRoom")
+
+local function getCurrentRoom()
+    return workspace:WaitForChild("CurrentRooms"):FindFirstChild(tostring(latestRoomValue.Value))
+end
+
+--// ===== LOAD MODEL =====
+local entity = game:GetObjects(MODEL_ID)[1]
+entity.Parent = workspace
+entity:PivotTo(CFrame.new(0,-1000,0))
+
+if not entity.PrimaryPart then
+    entity.PrimaryPart = entity:FindFirstChildWhichIsA("BasePart")
+end
+
+-- bật va chạm chạm player
+for _,v in ipairs(entity:GetDescendants()) do
+    if v:IsA("BasePart") then
+        v.CanTouch = true
+        v.CanCollide = false
+        v.Massless = true
+    end
+end
+
+--// ===== CREATE FUNCTION HOOK =====
+local deathHook = Instance.new("BindableFunction")
+deathHook.Name = "DeathHook"
+deathHook.Parent = entity
+
+deathHook.OnInvoke = function(player)
+    print("Death hook called for:", player.Name)
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+--// SERVICES
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// REMOVE OLD GUI
+pcall(function()
+	if CoreGui:FindFirstChild("JumpscareGui") then
+		CoreGui.JumpscareGui:Destroy()
+	end
+end)
+
+--// LOAD SOUND
+local function loadSound(data)
+	local sound = Instance.new("Sound")
+	local id = tostring(data[1])
+	local props = data[2] or {}
+
+	for k, v in pairs(props) do
+		if k ~= "SoundId" and k ~= "Parent" then
+			sound[k] = v
+		end
+	end
+
+	if id:find("rbxasset://") then
+		sound.SoundId = id
+	else
+		sound.SoundId = "rbxassetid://" .. id:gsub("%D", "")
+	end
+
+	sound.Parent = workspace
+	return sound
+end
+
+--// CONFIG (BẠN CÓ THỂ CHỈNH)
+local config = {
+	Image1 = "rbxassetid://113869567300359",
+	Image2 = "rbxassetid://113869567300359",
+
+	Shake = true,
+
+	Sound1 = {0, {Volume = 10}},
+	Sound2 = {140582989782464, {Volume = 10}},
+
+	Flashing = {
+		true,
+		Color3.fromRGB(255, 146, 3)
+	},
+
+	Tease = {
+		true,
+		Min = 1,
+		Max = 3
+	}
+}
+
+--// CREATE GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JumpscareGui"
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BorderSizePixel = 0
+bg.ZIndex = 999
+bg.Parent = gui
+
+local face = Instance.new("ImageLabel")
+face.AnchorPoint = Vector2.new(0.5, 0.5)
+face.Position = UDim2.new(0.5, 0, 0.5, 0)
+face.Size = UDim2.new(0, 150, 0, 150)
+face.BackgroundTransparency = 1
+face.Image = config.Image1
+face.ResampleMode = Enum.ResamplerMode.Pixelated
+face.Parent = bg
+
+--// SIZES
+local screenY = gui.AbsoluteSize.Y
+local minSize = screenY / 5
+local maxSize = screenY / 2.5
+
+--// TEASE
+local sound1, sound2
+if config.Sound1 then sound1 = loadSound(config.Sound1) end
+if config.Sound2 then sound2 = loadSound(config.Sound2) end
+
+if config.Tease and config.Tease[1] then
+	local loops = math.random(config.Tease.Min, config.Tease.Max)
+	if sound1 then sound1:Play() end
+
+	for _ = 1, loops do
+		task.wait(math.random(10, 20) / 100)
+		local grow = (maxSize - minSize) / loops
+		face.Size = face.Size + UDim2.new(0, grow, 0, grow)
+	end
+end
+
+--// FLASHING
+if config.Flashing and config.Flashing[1] then
+	task.spawn(function()
+		while gui.Parent do
+			bg.BackgroundColor3 = config.Flashing[2]
+			task.wait(math.random(25, 100) / 1000)
+			bg.BackgroundColor3 = Color3.new(0, 0, 0)
+			task.wait(math.random(25, 100) / 1000)
+		end
+	end)
+end
+
+--// SHAKE
+if config.Shake then
+	task.spawn(function()
+		local basePos = face.Position
+		while gui.Parent do
+			face.Position = basePos + UDim2.new(0, math.random(-10, 10), 0, math.random(-10, 10))
+			face.Rotation = math.random(-5, 5)
+			task.wait()
+		end
+	end)
+end
+
+--// FINAL JUMPSCARE
+face.Image = config.Image2
+face.Size = UDim2.new(0, maxSize, 0, maxSize)
+
+if sound2 then sound2:Play() end
+
+TweenService:Create(face, TweenInfo.new(0.75), {
+	Size = UDim2.new(0, screenY * 3, 0, screenY * 3),
+	ImageTransparency = 0.5
+}):Play()
+
+humanoid:TakeDamage(100)
+task.wait(0.75)
+
+--// CLEANUP
+gui:Destroy()
+if sound1 then sound1:Destroy() end
+if sound2 then sound2:Destroy() end
+
+-- ================= DEATH HINT =================
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "You died to who called A-400..",
+        "He won't stop finding for you..",
+        "Try to get rid of him as good as you can."
+    },
+    "Blue"
+)
+
+game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+    .Total.DeathCause.Value = "A-400"
+
+-- One-time execute guard
+if getgenv()._400_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._400_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Disastrous Seek",
+    Desc = "Come on bro.",
+    Reason = "Encountered A-400",
+    Image = "rbxassetid://113869567300359"
+})
+end
+
+--// ===== RANDOM SPAWN TRONG PHÒNG =====
+local function getRandomPointInRoom()
+    local room = getCurrentRoom()
+    if not room then return Vector3.new(0,5,0) end
+
+    local floor = room:FindFirstChild("Floor", true)
+    if not floor then
+        return room:GetBoundingBox().Position
+    end
+
+    local size = floor.Size
+    local offsetX = math.random(-size.X/2 + 3, size.X/2 - 3)
+    local offsetZ = math.random(-size.Z/2 + 3, size.Z/2 - 3)
+
+    local y = floor.Position.Y + floor.Size.Y/2 + entity.PrimaryPart.Size.Y/2 + 0.2
+    return Vector3.new(floor.Position.X + offsetX, y, floor.Position.Z + offsetZ)
+end
+
+--// ===== SPAWN =====
+entity:PivotTo(CFrame.new(getRandomPointInRoom()))
+
+--// ===== TOUCH TRIGGER =====
+local dead = false
+
+local function onTouch(hit)
+    if dead then return end
+    local plr = Players:GetPlayerFromCharacter(hit.Parent)
+    if plr then
+        dead = true
+        deathHook:Invoke(plr)
+        entity:Destroy()
+    end
+end
+
+for _,v in ipairs(entity:GetDescendants()) do
+    if v:IsA("BasePart") then
+        v.Touched:Connect(onTouch)
+    end
+end
+
+--// ===== MODEL TWEEN MOVE =====
+local moving = true
+
+local function tweenModel(model, newPos)
+    if not model.PrimaryPart then return end
+    local dist = (model.PrimaryPart.Position - newPos).Magnitude
+    local time = dist / MOVE_SPEED
+
+    TweenService:Create(
+        model.PrimaryPart,
+        TweenInfo.new(time, Enum.EasingStyle.Linear),
+        {CFrame = CFrame.new(newPos)}
+    ):Play()
+end
+
+task.spawn(function()
+    while moving and entity.Parent do
+        task.wait(MOVE_INTERVAL)
+        tweenModel(entity, getRandomPointInRoom())
+    end
+end)
+
+--// ===== ROOM CHANGE CLEANUP =====
+latestRoomValue.Changed:Connect(function()
+    moving = false
+    if entity then
+        entity:Destroy()
+
+-- One-time execute guard
+if getgenv()._400_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._400_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Disastrous Seek",
+    Desc = "Come on bro.",
+    Reason = "Encountered A-400",
+    Image = "rbxassetid://113869567300359"
+})
+    end
+end)
