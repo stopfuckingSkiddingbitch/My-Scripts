@@ -1,0 +1,370 @@
+--// ===== CONFIG =====
+local MODEL_ID = "rbxassetid://104113697879933"
+local MOVE_SPEED = 100
+local HITBOX_RANGE = 80
+local WAIT_AFTER_KILL = 1
+local WAIT_AT_END = 2
+local START_DELAY = 5
+
+--// ===== SERVICES =====
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local roomsFolder = workspace:WaitForChild("CurrentRooms")
+
+--// SORT ROOMS
+local function getSortedRooms()
+    local rooms = {}
+    for _, room in pairs(roomsFolder:GetChildren()) do
+        local num = tonumber(room.Name)
+        if num then
+            table.insert(rooms, {num = num, room = room})
+        end
+    end
+    table.sort(rooms, function(a,b) return a.num < b.num end)
+    return rooms
+end
+
+_G.DeathHook = function(player)
+    local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+--// SERVICES
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
+
+--// REMOVE OLD GUI
+pcall(function()
+	if CoreGui:FindFirstChild("JumpscareGui") then
+		CoreGui.JumpscareGui:Destroy()
+	end
+end)
+
+--// LOAD SOUND
+local function loadSound(data)
+	local sound = Instance.new("Sound")
+	local id = tostring(data[1])
+	local props = data[2] or {}
+
+	for k, v in pairs(props) do
+		if k ~= "SoundId" and k ~= "Parent" then
+			sound[k] = v
+		end
+	end
+
+	if id:find("rbxasset://") then
+		sound.SoundId = id
+	else
+		sound.SoundId = "rbxassetid://" .. id:gsub("%D", "")
+	end
+
+	sound.Parent = workspace
+	return sound
+end
+
+--// CONFIG (BẠN CÓ THỂ CHỈNH)
+local config = {
+	Image1 = "rbxassetid://84212097949690",
+	Image2 = "rbxassetid://84212097949690",
+
+	Shake = true,
+
+	Sound1 = {0, {Volume = 10}},
+	Sound2 = {119580828045347, {Volume = 10}},
+
+	Flashing = {
+		true,
+		Color3.fromRGB(255, 255, 255)
+	},
+
+	Tease = {
+		true,
+		Min = 1,
+		Max = 3
+	}
+}
+
+--// CREATE GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JumpscareGui"
+gui.IgnoreGuiInset = true
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = CoreGui
+
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.new(0, 0, 0)
+bg.BorderSizePixel = 0
+bg.ZIndex = 999
+bg.Parent = gui
+
+local face = Instance.new("ImageLabel")
+face.AnchorPoint = Vector2.new(0.5, 0.5)
+face.Position = UDim2.new(0.5, 0, 0.5, 0)
+face.Size = UDim2.new(0, 150, 0, 150)
+face.BackgroundTransparency = 1
+face.Image = config.Image1
+face.ResampleMode = Enum.ResamplerMode.Pixelated
+face.Parent = bg
+
+--// SIZES
+local screenY = gui.AbsoluteSize.Y
+local minSize = screenY / 5
+local maxSize = screenY / 2.5
+
+--// TEASE
+local sound1, sound2
+if config.Sound1 then sound1 = loadSound(config.Sound1) end
+if config.Sound2 then sound2 = loadSound(config.Sound2) end
+
+if config.Tease and config.Tease[1] then
+	local loops = math.random(config.Tease.Min, config.Tease.Max)
+	if sound1 then sound1:Play() end
+
+	for _ = 1, loops do
+		task.wait(math.random(10, 20) / 100)
+		local grow = (maxSize - minSize) / loops
+		face.Size = face.Size + UDim2.new(0, grow, 0, grow)
+	end
+end
+
+--// FLASHING
+if config.Flashing and config.Flashing[1] then
+	task.spawn(function()
+		while gui.Parent do
+			bg.BackgroundColor3 = config.Flashing[2]
+			task.wait(math.random(25, 100) / 1000)
+			bg.BackgroundColor3 = Color3.new(0, 0, 0)
+			task.wait(math.random(25, 100) / 1000)
+		end
+	end)
+end
+
+--// SHAKE
+if config.Shake then
+	task.spawn(function()
+		local basePos = face.Position
+		while gui.Parent do
+			face.Position = basePos + UDim2.new(0, math.random(-10, 10), 0, math.random(-10, 10))
+			face.Rotation = math.random(-5, 5)
+			task.wait()
+		end
+	end)
+end
+
+--// FINAL JUMPSCARE
+face.Image = config.Image2
+face.Size = UDim2.new(0, maxSize, 0, maxSize)
+
+if sound2 then sound2:Play() end
+
+TweenService:Create(face, TweenInfo.new(0.75), {
+	Size = UDim2.new(0, screenY * 3, 0, screenY * 3),
+	ImageTransparency = 0.5
+}):Play()
+
+humanoid:TakeDamage(100)
+task.wait(0.75)
+
+--// CLEANUP
+gui:Destroy()
+if sound1 then sound1:Destroy() end
+if sound2 then sound2:Destroy() end
+
+-- ================= DEATH HINT =================
+firesignal(
+    game.ReplicatedStorage.RemotesFolder.DeathHint.OnClientEvent,
+    {
+        "You died to who called A-200..",
+        "When he appears, there will be breaking noise",
+        "Hide as soon as possible for your life.."
+    },
+    "Blue"
+)
+
+game.ReplicatedStorage.GameStats["Player_" .. player.Name]
+    .Total.DeathCause.Value = "A-200"
+
+-- One-time execute guard
+if getgenv()._200_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._200_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Scribbles",
+    Desc = "You can not just stand there.",
+    Reason = "Encountered A-200",
+    Image = "rbxassetid://84212097949690"
+})
+end
+
+-- MOVE FUNCTION
+local function tweenTo(part, pos)
+    local dist = (part.Position - pos).Magnitude
+    local time = dist / MOVE_SPEED
+    local tween = TweenService:Create(part, TweenInfo.new(time, Enum.EasingStyle.Linear), {
+        CFrame = CFrame.new(pos)
+    })
+    tween:Play()
+    tween.Completed:Wait()
+end
+
+-- SPAWN ENTITY
+local function spawnEntity()
+    local sortedRooms = getSortedRooms()
+    if #sortedRooms < 2 then return end
+
+    local model = game:GetObjects(MODEL_ID)[1]
+    model.Parent = workspace
+
+-- 👻 GHOST MODE (xuyên mọi thứ)
+for _, v in ipairs(model:GetDescendants()) do
+    if v:IsA("BasePart") then
+        v.CanCollide = false
+        v.CanTouch = false
+        v.CanQuery = false
+        v.Massless = true
+        v.Anchored = true
+    end
+end
+
+    if not model.PrimaryPart then
+        model.PrimaryPart = model:FindFirstChildWhichIsA("BasePart")
+    end
+
+    model:SetPrimaryPartCFrame(sortedRooms[1].room.RoomEntrance.CFrame)
+    local entity = model.PrimaryPart
+
+-- 🛡️ ANTI-VOID SYSTEM
+local SAFE_Y = entity.Position.Y  -- độ cao spawn ban đầu
+
+task.spawn(function()
+    while alive and entity and entity.Parent do
+        if entity.Position.Y < -50 then -- nếu rơi quá thấp
+            entity.CFrame = CFrame.new(targetPos.X, SAFE_Y, targetPos.Z)
+        end
+        task.wait(0.1)
+    end
+end)
+
+local function isPlayerHiding(player)
+    local char = player.Character
+    if not char then return false end
+
+    -- Doors thường gắn state trong Character
+    local hidingValue = char:FindFirstChild("Hiding")
+    if hidingValue and hidingValue.Value == true then
+        return true
+    end
+
+    -- Một số bản dùng attribute
+    if char:GetAttribute("Hiding") == true then
+        return true
+    end
+
+    return false
+end
+
+    local alive = true
+    local chasingPlayer = nil
+
+-- ⏳ ĐỢI TRƯỚC KHI DI CHUYỂN
+task.wait(START_DELAY)
+
+    -- HITBOX SYSTEM
+    task.spawn(function()
+        while alive do
+            local foundTarget = nil
+
+            for _, plr in pairs(Players:GetPlayers()) do
+                local char = plr.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    local hrp = char.HumanoidRootPart
+                    local dist = (hrp.Position - entity.Position).Magnitude
+
+                    if dist <= HITBOX_RANGE and not isPlayerHiding(plr) then
+                        foundTarget = plr
+                        entity.CFrame = entity.CFrame:Lerp(CFrame.new(hrp.Position), 0.4)
+
+                        if dist <= 4 then
+                            alive = false
+                            if _G.DeathHook then
+                                pcall(function() _G.DeathHook(plr) end)
+                            end
+                            task.wait(WAIT_AFTER_KILL)
+                            model:Destroy()
+                            return
+                        end
+                        break
+                    end
+                end
+            end
+
+            chasingPlayer = foundTarget
+            RunService.Heartbeat:Wait()
+        end
+    end)
+
+    -- PATH MOVEMENT (CHỈ CHẠY KHI KO DÍ AI)
+    for i, data in ipairs(sortedRooms) do
+        if not alive then return end
+
+        while chasingPlayer do
+            RunService.Heartbeat:Wait() -- đợi player thoát hitbox
+        end
+
+        tweenTo(entity, data.room.RoomExit.Position)
+
+        if sortedRooms[i+1] then
+            while chasingPlayer do
+                RunService.Heartbeat:Wait()
+            end
+            tweenTo(entity, sortedRooms[i+1].room.RoomEntrance.Position)
+        end
+    end
+
+    if alive then
+        task.wait(WAIT_AT_END)
+        model:Destroy()
+
+-- One-time execute guard
+if getgenv()._200_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._200_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Scribbles",
+    Desc = "You can not just stand there.",
+    Reason = "Encountered A-200",
+    Image = "rbxassetid://84212097949690"
+})
+    end
+end
+
+spawnEntity()
