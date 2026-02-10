@@ -431,4 +431,28 @@ task.spawn(function()
     task.wait(WAIT_AT_END)
     hitbox:Destroy()
     entity:Destroy()
+
+-- One-time execute guard
+if getgenv()._85_ALREADY_EXECUTED then
+    warn("[SCRIPT] Script đã được chạy trước đó, từ chối execute!")
+    return
+end
+
+getgenv()._85_ALREADY_EXECUTED = true
+
+-- ======================
+-- SCRIPT CHÍNH BẮT ĐẦU Ở ĐÂY
+-- ======================
+
+print("[SCRIPT] Execute lần đầu thành công!")
+
+local achievementGiver = loadstring(game:HttpGet("https://raw.githubusercontent.com/Voor-Pr00/Achivements/refs/heads/main/Voorpr0"))()
+
+---====== Display achievement ======---
+achievementGiver({
+    Title = "The Seeker",
+    Desc = "Where are you~?",
+    Reason = "Encountered A-85",
+    Image = "rbxassetid://115081220467463"
+})
 end)
