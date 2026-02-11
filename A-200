@@ -249,16 +249,46 @@ end
     model:SetPrimaryPartCFrame(sortedRooms[1].room.RoomEntrance.CFrame)
     local entity = model.PrimaryPart
 
--- 🛡️ ANTI-VOID SYSTEM
-local SAFE_Y = entity.Position.Y  -- độ cao spawn ban đầu
+local alive = true
+local connections = {}
+local threads = {}
 
-task.spawn(function()
-    while alive and entity and entity.Parent do
-        if entity.Position.Y < -50 then -- nếu rơi quá thấp
-            entity.CFrame = CFrame.new(targetPos.X, SAFE_Y, targetPos.Z)
-        end
-        task.wait(0.1)
-    end
+local function cleanup()
+	if not alive then return end
+	alive = false
+
+	-- ngắt connections
+	for _,c in pairs(connections) do
+		pcall(function() c:Disconnect() end)
+	end
+	table.clear(connections)
+
+	-- dừng thread (bằng alive=false)
+	table.clear(threads)
+
+	-- xoá model
+	if model and model.Parent then
+		model:Destroy()
+	end
+end
+
+-- nếu model bị xoá từ ngoài
+table.insert(connections, model.AncestryChanged:Connect(function(_, parent)
+	if not parent then
+		cleanup()
+	end
+end))
+
+-- 🛡️ ANTI-VOID SYSTEM
+local SAFE_Y = entity.Position.Y
+
+threads.antivoid = task.spawn(function()
+	while alive and entity.Parent do
+		if entity.Position.Y < -50 then
+			entity.CFrame = CFrame.new(entity.Position.X, SAFE_Y, entity.Position.Z)
+		end
+		task.wait(0.1)
+	end
 end)
 
 local function isPlayerHiding(player)
@@ -286,8 +316,8 @@ end
 task.wait(START_DELAY)
 
     -- HITBOX SYSTEM
-    task.spawn(function()
-        while alive do
+    threads.hitbox = task.spawn(function()
+	while alive and entity.Parent do
             local foundTarget = nil
 
             for _, plr in pairs(Players:GetPlayers()) do
@@ -301,13 +331,12 @@ task.wait(START_DELAY)
                         entity.CFrame = entity.CFrame:Lerp(CFrame.new(hrp.Position), 0.4)
 
                         if dist <= 4 then
-                            alive = false
                             if _G.DeathHook then
-                                pcall(function() _G.DeathHook(plr) end)
-                            end
-                            task.wait(WAIT_AFTER_KILL)
-                            model:Destroy()
-                            return
+	pcall(function() _G.DeathHook(plr) end)
+end
+task.wait(WAIT_AFTER_KILL)
+cleanup()
+return
                         end
                         break
                     end
@@ -338,8 +367,9 @@ task.wait(START_DELAY)
     end
 
     if alive then
-        task.wait(WAIT_AT_END)
-        model:Destroy()
+	task.wait(WAIT_AT_END)
+	cleanup()
+end
 
 -- One-time execute guard
 if getgenv()._200_ALREADY_EXECUTED then
@@ -364,7 +394,6 @@ achievementGiver({
     Reason = "Encountered A-200",
     Image = "rbxassetid://84212097949690"
 })
-    end
 end
 
 spawnEntity()
