@@ -1,7 +1,7 @@
 --// ===== CONFIG =====
 local MODEL_ID = "rbxassetid://104113697879933"
 local MOVE_SPEED = 100
-local HITBOX_RANGE = 80
+local HITBOX_RANGE = 0.01
 local WAIT_AFTER_KILL = 1
 local WAIT_AT_END = 2
 local START_DELAY = 5
@@ -223,6 +223,32 @@ local function tweenTo(part, pos)
     tween.Completed:Wait()
 end
 
+-- GET PATH NODES FROM ROOM
+local function getRoomPath(room)
+    local nodesFolder = room:FindFirstChild("PathfindNodes")
+    if not nodesFolder then
+        return nil
+    end
+
+    local nodes = nodesFolder:GetChildren()
+    if #nodes == 0 then
+        return nil
+    end
+
+    -- sort theo tên số (1,2,3...)
+    table.sort(nodes, function(a,b)
+        return tonumber(a.Name) < tonumber(b.Name)
+    end)
+
+    local positions = {}
+
+    for _, node in ipairs(nodes) do
+        table.insert(positions, node.Position)
+    end
+
+    return positions
+end
+
 -- SPAWN ENTITY
 local function spawnEntity()
     local sortedRooms = getSortedRooms()
@@ -247,7 +273,10 @@ end
     end
 
     model:SetPrimaryPartCFrame(sortedRooms[1].room.RoomEntrance.CFrame)
-    local entity = model.PrimaryPart
+local entity = model.PrimaryPart
+
+-- tính offset chiều cao so với mặt đất
+local HEIGHT_OFFSET = 5 -- m có thể chỉnh số này
 
 local alive = true
 local connections = {}
@@ -348,23 +377,47 @@ return
         end
     end)
 
-    -- PATH MOVEMENT (CHỈ CHẠY KHI KO DÍ AI)
-    for i, data in ipairs(sortedRooms) do
-        if not alive then return end
+    -- PATH MOVEMENT (THEO NODE NẾU CÓ)
+for i, data in ipairs(sortedRooms) do
+    if not alive then return end
 
-        while chasingPlayer do
-            RunService.Heartbeat:Wait() -- đợi player thoát hitbox
-        end
+    while chasingPlayer do
+        RunService.Heartbeat:Wait()
+    end
 
-        tweenTo(entity, data.room.RoomExit.Position)
+    local room = data.room
+    local path = getRoomPath(room)
 
-        if sortedRooms[i+1] then
+    if path then
+        -- đi từng node
+        for _, pos in ipairs(path) do
+            if not alive then return end
+
             while chasingPlayer do
                 RunService.Heartbeat:Wait()
             end
-            tweenTo(entity, sortedRooms[i+1].room.RoomEntrance.Position)
+
+            local adjustedPos = Vector3.new(
+    pos.X,
+    pos.Y + HEIGHT_OFFSET,
+    pos.Z
+)
+
+tweenTo(entity, adjustedPos)
         end
+    else
+        -- fallback nếu room ko có path
+        tweenTo(entity, room.RoomExit.Position)
     end
+
+    -- sang phòng tiếp theo
+    if sortedRooms[i+1] then
+        while chasingPlayer do
+            RunService.Heartbeat:Wait()
+        end
+        tweenTo(entity, sortedRooms[i+1].room.RoomEntrance.Position)
+    end
+end
 
     if alive then
 	task.wait(WAIT_AT_END)
